@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
@@ -51,7 +53,7 @@ export default function MultiplePipeSurfaceAreaCalculator() {
     totalSurfaceAreaMetersSquared: string;
   } | null>(null);
 
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false); // About dialog state
 
   const handleFormSubmit = (formData: FormData) => {
@@ -87,7 +89,7 @@ export default function MultiplePipeSurfaceAreaCalculator() {
       totalSurfaceAreaMetersSquared: totalSurfaceAreaMetersSquared.toFixed(2),
     });
 
-    setIsDialogOpen(true);
+  
   };
 
   return (
@@ -195,7 +197,7 @@ export default function MultiplePipeSurfaceAreaCalculator() {
       {isAboutDialogOpen && (
         <Dialog open={isAboutDialogOpen} onOpenChange={setIsAboutDialogOpen}>
           <DialogContent>
-            <DialogTitle>About this Calculator</DialogTitle>
+            <DialogTitle>It is developed by Mr. Mohammed Ali</DialogTitle>
             <DialogDescription>
               This calculator helps you calculate the surface area of pipes based on their length and diameter. You can add multiple pipes to calculate the total surface area.
             </DialogDescription>
@@ -206,20 +208,6 @@ export default function MultiplePipeSurfaceAreaCalculator() {
         </Dialog>
       )}
 
-      {/* Results Dialog */}
-      {isDialogOpen && (
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent>
-            <DialogTitle>Results</DialogTitle>
-            <DialogDescription>
-              The results are shown in the table above.
-            </DialogDescription>
-            <Button onClick={() => setIsDialogOpen(false)} className="mt-4 bg-red-500 text-white hover:bg-red-600">
-              Close
-            </Button>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 }
