@@ -1,4 +1,4 @@
-import Image from "next/image";
+
 
 import SurfaceAreaCalculation from './SurfaceAreaCalculation/page';
 export default function Home() {

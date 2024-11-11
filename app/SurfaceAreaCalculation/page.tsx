@@ -35,11 +35,13 @@ interface FormData {
 }
 
 export default function MultiplePipeSurfaceAreaCalculator() {
+    
   const { control, register, handleSubmit } = useForm<FormData>({
     defaultValues: {
       pipes: [{ length: "", diameterInches: "" }],
     },
   });
+  
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -54,6 +56,7 @@ export default function MultiplePipeSurfaceAreaCalculator() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false); // About dialog state
+  
 
   const handleFormSubmit = (formData: FormData) => {
     let totalLengthMeters = 0;
@@ -197,20 +200,20 @@ export default function MultiplePipeSurfaceAreaCalculator() {
       </Card>
 
       {/* About Button Dialog */}
-      <Dialog open={isAboutDialogOpen} onOpenChange={setIsAboutDialogOpen}>
-        <DialogContent>
-          <DialogTitle>About</DialogTitle>
-          <DialogDescription>
-            <p className="text-center">It is Developed By Mr. Mohammed Ali</p>
-          </DialogDescription>
-          <Button
-            onClick={() => setIsAboutDialogOpen(false)}
-            className="mt-4 bg-red-500 text-white hover:bg-red-600"
-          >
-            Close
-          </Button>
-        </DialogContent>
-      </Dialog>
+      {isDialogOpen && (
+  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+    <DialogContent>
+      <DialogTitle>Results</DialogTitle>
+      <DialogDescription>
+        {/* Any content you want to display in the dialog */}
+      </DialogDescription>
+      <Button onClick={() => setIsDialogOpen(false)} className="mt-4 bg-red-500 text-white hover:bg-red-600">
+        Close
+      </Button>
+    </DialogContent>
+  </Dialog>
+)}
+
     </div>
   );
 }
