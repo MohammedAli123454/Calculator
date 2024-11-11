@@ -1,4 +1,3 @@
-"use client";
 import { useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
@@ -35,13 +34,11 @@ interface FormData {
 }
 
 export default function MultiplePipeSurfaceAreaCalculator() {
-    
   const { control, register, handleSubmit } = useForm<FormData>({
     defaultValues: {
       pipes: [{ length: "", diameterInches: "" }],
     },
   });
-  
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -56,7 +53,6 @@ export default function MultiplePipeSurfaceAreaCalculator() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false); // About dialog state
-  
 
   const handleFormSubmit = (formData: FormData) => {
     let totalLengthMeters = 0;
@@ -104,11 +100,11 @@ export default function MultiplePipeSurfaceAreaCalculator() {
         >
           About
         </Button>
-        
+
         <CardHeader>
           <h2 className="text-2xl font-bold mb-4">Pipe Surface Area Calculator</h2>
         </CardHeader>
-        
+
         <CardContent>
           <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
             <div className="space-y-4 overflow-y-auto max-h-96">
@@ -166,8 +162,6 @@ export default function MultiplePipeSurfaceAreaCalculator() {
           {calculationResults && (
             <div className="w-full">
               <h3 className="text-lg font-bold mb-4">Calculation Results:</h3>
-
-              {/* Displaying results in table-like format */}
               <div className="w-full">
                 {/* Table Header */}
                 <div className="grid grid-cols-3 gap-4 p-2 bg-gray-200 font-semibold text-center">
@@ -175,7 +169,6 @@ export default function MultiplePipeSurfaceAreaCalculator() {
                   <div>Diameter (inches)</div>
                   <div>Surface Area (m²)</div>
                 </div>
-                
                 {/* Displaying pipe results in rows */}
                 {calculationResults.pipes.map((pipe, index) => (
                   <div
@@ -189,7 +182,6 @@ export default function MultiplePipeSurfaceAreaCalculator() {
                 ))}
               </div>
 
-              {/* Displaying total pipe length and surface area */}
               <div className="mt-4 text-xl font-bold">
                 <p>Total Pipe Length: {calculationResults.totalLengthMeters} m</p>
                 <p>Total Surface Area: {calculationResults.totalSurfaceAreaMetersSquared} m²</p>
@@ -200,20 +192,34 @@ export default function MultiplePipeSurfaceAreaCalculator() {
       </Card>
 
       {/* About Button Dialog */}
-      {isDialogOpen && (
-  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-    <DialogContent>
-      <DialogTitle>Results</DialogTitle>
-      <DialogDescription>
-        {/* Any content you want to display in the dialog */}
-      </DialogDescription>
-      <Button onClick={() => setIsDialogOpen(false)} className="mt-4 bg-red-500 text-white hover:bg-red-600">
-        Close
-      </Button>
-    </DialogContent>
-  </Dialog>
-)}
+      {isAboutDialogOpen && (
+        <Dialog open={isAboutDialogOpen} onOpenChange={setIsAboutDialogOpen}>
+          <DialogContent>
+            <DialogTitle>About this Calculator</DialogTitle>
+            <DialogDescription>
+              This calculator helps you calculate the surface area of pipes based on their length and diameter. You can add multiple pipes to calculate the total surface area.
+            </DialogDescription>
+            <Button onClick={() => setIsAboutDialogOpen(false)} className="mt-4 bg-red-500 text-white hover:bg-red-600">
+              Close
+            </Button>
+          </DialogContent>
+        </Dialog>
+      )}
 
+      {/* Results Dialog */}
+      {isDialogOpen && (
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent>
+            <DialogTitle>Results</DialogTitle>
+            <DialogDescription>
+              The results are shown in the table above.
+            </DialogDescription>
+            <Button onClick={() => setIsDialogOpen(false)} className="mt-4 bg-red-500 text-white hover:bg-red-600">
+              Close
+            </Button>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
