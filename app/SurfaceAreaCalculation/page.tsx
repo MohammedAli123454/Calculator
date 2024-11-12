@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 
 // Nominal pipe sizes with corresponding values in meters
 const nominalPipeSizes: { [key: string]: number } = {
-  "0.075": 0.0267,
+  "0.50": 0.0213,
+  "0.75": 0.0267,
   "1": 0.0334,
   "2": 0.0603,
   "3": 0.0889,
@@ -53,10 +54,22 @@ export default function MultiplePipeSurfaceAreaCalculator() {
     totalSurfaceAreaMetersSquared: string;
   } | null>(null);
 
-
+  const [formError, setFormError] = useState<string | null>(null); // Error state
   const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false); // About dialog state
 
   const handleFormSubmit = (formData: FormData) => {
+    // Check if all fields are filled
+    const allFieldsFilled = formData.pipes.every(
+      (pipe) => pipe.length.trim() !== "" && pipe.diameterInches.trim() !== ""
+    );
+
+    if (!allFieldsFilled) {
+      setFormError("Please fill all the fields or remove the blank fields");
+      return;
+    }
+
+    setFormError(null); // Clear any previous error message
+
     let totalLengthMeters = 0;
     let totalSurfaceAreaMetersSquared = 0;
 
@@ -88,8 +101,6 @@ export default function MultiplePipeSurfaceAreaCalculator() {
       totalLengthMeters: totalLengthMeters.toFixed(2),
       totalSurfaceAreaMetersSquared: totalSurfaceAreaMetersSquared.toFixed(2),
     });
-
-  
   };
 
   return (
@@ -103,59 +114,71 @@ export default function MultiplePipeSurfaceAreaCalculator() {
           About
         </Button>
 
-        <CardHeader>
+        <CardHeader className="p-2">
           <h2 className="text-2xl font-bold mb-4">Pipe Surface Area Calculator</h2>
         </CardHeader>
 
         <CardContent>
           <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-            <div className="space-y-4 overflow-y-auto max-h-96">
-              {fields.map((field, index) => (
-                <div key={field.id} className="flex items-center space-x-4">
-                  <div className="flex-1">
-                    {index === 0 && (
-                      <label className="block text-sm font-medium mb-1">Pipe Length (meters)</label>
-                    )}
-                    <Input
-                      type="number"
-                      step="0.01"
-                      {...register(`pipes.${index}.length`, { required: true })}
-                      placeholder="Enter length in meters"
-                      className="block w-full"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    {index === 0 && (
-                      <label className="block text-sm font-medium mb-1">Pipe Diameter (inches)</label>
-                    )}
-                    <Input
-                      type="number"
-                      step="0.01"
-                      {...register(`pipes.${index}.diameterInches`, { required: true })}
-                      placeholder="Enter diameter in inches"
-                      className="block w-full"
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    onClick={() => remove(index)}
-                    className="bg-red-500 text-white hover:bg-red-600 self-end"
-                  >
-                    Remove
-                  </Button>
+            {formError && <p className="text-red-500">{formError}</p>} {/* Error message */}
+            <div className="relative">
+              {/* Fixed Labels without background */}
+              <div className="sticky top-0 z-10 flex space-x-4 mb-2">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium">Pipe Length (meters)</label>
                 </div>
-              ))}
-              <hr className="border-t border-gray-300 w-full mt-4" />
+                <div className="flex-1">
+                  <label className="block text-sm font-medium">Pipe Diameter (inches)</label>
+                </div>
+                <div className="w-28"></div> {/* Empty space for buttons */}
+              </div>
+
+              <div className="space-y-4 overflow-y-auto max-h-96">
+                {fields.map((field, index) => (
+                  <div key={field.id} className="flex items-center space-x-4">
+                    <div className="flex-1">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        {...register(`pipes.${index}.length`, { required: true })}
+                        placeholder="Enter length in meters"
+                        className="block w-full"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        {...register(`pipes.${index}.diameterInches`, { required: true })}
+                        placeholder="Enter diameter in inches"
+                        className="block w-full"
+                      />
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button
+                        type="button"
+                        onClick={() => append({ length: "", diameterInches: "" })}
+                        className="bg-blue-500 text-white hover:bg-blue-600 flex-1 font-bold text-lg"
+                      >
+                        +
+                      </Button>
+                      {/* Disable remove button if it's the first item */}
+                      <Button
+                        type="button"
+                        onClick={() => index > 0 && remove(index)}
+                        className="bg-red-500 text-white hover:bg-red-600 flex-1"
+                        disabled={index === 0}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                <hr className="border-t border-gray-300 w-full mt-4" />
+              </div>
             </div>
-            <Button
-              type="button"
-              onClick={() => append({ length: "", diameterInches: "" })}
-              className="w-full bg-blue-500 text-white hover:bg-blue-600"
-            >
-              Add Another Pipe
-            </Button>
-            <Button type="submit" className="w-full bg-green-500 text-white hover:bg-green-600 mt-4">
-              Calculate Surface Areas
+            <Button type="submit" className="bg-green-500 text-white hover:bg-green-600 w-full">
+              Calculate Surface Area
             </Button>
           </form>
         </CardContent>
@@ -207,7 +230,6 @@ export default function MultiplePipeSurfaceAreaCalculator() {
           </DialogContent>
         </Dialog>
       )}
-
     </div>
   );
 }
