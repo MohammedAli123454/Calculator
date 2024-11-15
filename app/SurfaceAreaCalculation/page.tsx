@@ -104,7 +104,8 @@ export default function MultiplePipeSurfaceAreaCalculator() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
+    // <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
+    <div className="flex justify-center items-center min-h-screen  p-4">
       <Card className="w-full max-w-3xl p-4 relative">
         {/* About Button positioned at the top-right */}
         <Button

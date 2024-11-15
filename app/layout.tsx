@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -26,9 +28,36 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased flex h-screen`}
       >
-        {children}
+        <SidebarProvider>
+          <div className="flex h-full w-full">
+            {/* Sidebar with a fixed width */}
+            <AppSidebar className="w-64 bg-gray-100" />
+
+            {/* Main content should take up the rest of the space */}
+            <main className="relative flex-1 max-w-full overflow-auto p-6">
+              {/* 
+                - `relative`: To position the `SidebarTrigger` absolutely within this container.
+                - `flex-1`: Ensures the main content area fills the remaining space.
+                - `max-w-full`: Makes sure the content can expand to full width.
+                - `overflow-auto`: Allows scrolling if the content overflows.
+                - `p-6`: Adds padding around the content.
+              */}
+              {children}
+
+              {/* Sidebar Trigger */}
+              <SidebarTrigger
+                className="absolute top-4 left-4 z-10"
+              />
+              {/* 
+                - `absolute`: Positions the trigger button relative to the main content.
+                - `top-4` and `left-4`: Positions the button within the content area.
+                - `z-10`: Ensures the button appears on top of other content.
+              */}
+            </main>
+          </div>
+        </SidebarProvider>
       </body>
     </html>
   );

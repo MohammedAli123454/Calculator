@@ -17,6 +17,8 @@ interface FormData {
   pedestalLength: string;
   pedestalWidth: string;
   pedestalHeight: string;
+  type: string;
+  totalFoundation: string;
 }
 
 const FoundationVolumeCalculator: React.FC = () => {
@@ -28,6 +30,8 @@ const FoundationVolumeCalculator: React.FC = () => {
       pedestalLength: '',
       pedestalWidth: '',
       pedestalHeight: '',
+      type: '',
+      totalFoundation: '',
     },
   });
 
@@ -91,35 +95,44 @@ const FoundationVolumeCalculator: React.FC = () => {
     return `${baseText} in ${unitText}`;
   };
 
+  // Get the number of typical foundations
+  const totalFoundationCount = parseInt(getValues('totalFoundation'), 10) || 0;
+
+  // Total sums for all rows
+  let totalLeanConcrete = 0;
+  let totalFoundationVolume = 0;
+  let totalPedestalVolume = 0;
+  let totalOverall = 0;
+
+  for (let i = 0; i < totalFoundationCount; i++) {
+    totalLeanConcrete += volumes.leanConcreteVolume;
+    totalFoundationVolume += volumes.foundationVolume;
+    totalPedestalVolume += volumes.pedestalVolume;
+    totalOverall += volumes.total;
+  }
+
   return (
-    // Wrap the entire form in FormProvider to provide context for react-hook-form
     <FormProvider {...methods}>
       <div className="p-6 bg-gray-100 min-h-screen flex justify-center items-center">
-      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-  <DialogContent className="w-full max-w-[95%] max-h-[95vh] p-0 overflow-hidden"> {/* Ensure no overflow from dialog */}
-    <DialogTitle>Notification</DialogTitle>
-    <DialogDescription className="overflow-y-auto max-h-[80vh]"> {/* Scrollable content */}
-      {dialogContent === 'image' ? (
-        <img
-          src="/volume.jpeg"
-          alt="Volume Diagram"
-          className="w-full h-auto max-h-full" // Full width, height auto, max height = container's height
-        />
-      ) : (
-        dialogMessage // This will show the explanation text
-      )}
-    </DialogDescription>
-    <Button onClick={() => setOpenDialog(false)} className="mt-4">
-      OK
-    </Button>
-  </DialogContent>
-</Dialog>
-
-
-
-
-
-
+        <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+          <DialogContent className="w-full max-w-[95%] max-h-[95vh] p-0 overflow-hidden">
+            <DialogTitle>Notification</DialogTitle>
+            <DialogDescription className="overflow-y-auto max-h-[80vh]">
+              {dialogContent === 'image' ? (
+                <img
+                  src="/volume.jpeg"
+                  alt="Volume Diagram"
+                  className="w-full h-auto max-h-full"
+                />
+              ) : (
+                dialogMessage
+              )}
+            </DialogDescription>
+            <Button onClick={() => setOpenDialog(false)} className="mt-4">
+              OK
+            </Button>
+          </DialogContent>
+        </Dialog>
 
         <Card className="p-6 shadow-lg w-full max-w-4xl bg-white rounded-md">
           <h2 className="text-center mb-2 font-semibold text-xl text-gray-800">
@@ -158,7 +171,7 @@ const FoundationVolumeCalculator: React.FC = () => {
             {/* Foundation and Pedestal Inputs Cards (Side by Side) */}
             <div className="flex gap-6">
               {/* Foundation Inputs Card */}
-              <Card className="p-5 bg-gray-50 w-1/2">
+              <Card className="p-5 bg-gray-50 w-full sm:w-1/2 md:w-1/2"> {/* Ensuring flex-wrap and proper widths */}
                 <h3 className="font-semibold mb-2 text-gray-700">Foundation Inputs</h3>
                 <div className="grid grid-cols-5 gap-4 items-center">
                   <label className="col-span-1 text-md font-medium text-gray-600 mb-2">Length</label>
@@ -191,7 +204,7 @@ const FoundationVolumeCalculator: React.FC = () => {
               </Card>
 
               {/* Pedestal Inputs Card */}
-              <Card className="p-5 bg-gray-50 w-1/2">
+              <Card className="p-5 bg-gray-50 w-full sm:w-1/2 md:w-1/2"> {/* Ensuring flex-wrap and proper widths */}
                 <h3 className="font-semibold mb-2 text-gray-700">Pedestal Inputs</h3>
                 <div className="grid grid-cols-5 gap-4 items-center">
                   <label className="col-span-1 text-md font-medium text-gray-600 mb-2">Length</label>
@@ -224,44 +237,74 @@ const FoundationVolumeCalculator: React.FC = () => {
               </Card>
             </div>
 
+            {/* Typical Foundations Card (Full Width) */}
+            <Card className="p-5 bg-gray-50 w-full">
+              <h3 className="font-semibold mb-2 text-gray-700">Typical Foundations Numbers</h3>
+              <div className="grid grid-cols-5 gap-4 items-center">
+                <label className="col-span-1 text-md font-medium text-gray-600 mb-2">Foundation Type</label>
+                <div className="col-span-4">
+                  <Input
+                    className="border-gray-300 rounded-md shadow-sm"
+                    placeholder="Foundations Type"
+                    {...register('type')}
+                  />
+                </div>
+
+                <label className="col-span-1 text-md font-medium text-gray-600 mb-2">Total Foundations</label>
+                <div className="col-span-4">
+                  <Input
+                    className="border-gray-300 rounded-md shadow-sm"
+                    placeholder="Typical Foundations Numbers"
+                    {...register('totalFoundation')}
+                  />
+                </div>
+              </div>
+            </Card>
+
             {/* Submit Button */}
             <Button type="submit" className="mt-5 bg-indigo-600 text-white w-full">
               Calculate
             </Button>
           </form>
 
-          {/* Results Card */}
+          {/* Results Table */}
           <Card className="p-5 mt-8 bg-gray-50">
             <h3 className="font-semibold mb-4 text-gray-700">Concrete Volume in m³</h3>
-            <div className="flex flex-wrap gap-4">
-              <Card className="p-4 shadow-sm bg-white">Lean: {volumes.leanConcreteVolume} m³</Card>
-              <Card className="p-4 shadow-sm bg-white">Foundation: {volumes.foundationVolume} m³</Card>
-              <Card className="p-4 shadow-sm bg-white">Pedestal: {volumes.pedestalVolume} m³</Card>
-              <Card className="p-4 shadow-sm bg-white font-semibold">Total: {volumes.total} m³</Card>
-            </div>
+            <div className="w-full">
+              {/* Table Header */}
+              <div className="grid grid-cols-6 gap-4 p-2 bg-gray-200 font-semibold text-center">
+                <div>S.No</div>
+                <div>Type</div>
+                <div>Lean Concrete</div>
+                <div>Foundation</div>
+                <div>Pedestal</div>
+                <div>Total</div>
+              </div>
 
-            {/* Action Buttons (moved to the bottom of the result card) */}
-            <div className="flex items-center justify-center gap-4 mt-5">
-              <Button
-                onClick={() => {
-                  setDialogContent('image'); // Show the image (volume.jpeg)
-                  setDialogMessage('');
-                  setOpenDialog(true);
-                }}
-                className="bg-blue-500 text-white"
-              >
-                View Volume Diagram
-              </Button>
-              <Button
-                onClick={() => {
-                  setDialogContent('text'); // Show explanation text
-                  setDialogMessage('Detailed explanation about the volume calculation...');
-                  setOpenDialog(true);
-                }}
-                className="bg-green-500 text-white"
-              >
-                View Explanation
-              </Button>
+              {/* Table Body - Repeat for each typical foundation */}
+              {Array.from({ length: totalFoundationCount }, (_, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-6 gap-4 p-2 border-t text-center"
+                >
+                  <div>{index + 1}</div>
+                  <div>{getValues('type')}</div>
+                  <div>{volumes.leanConcreteVolume} m³</div>
+                  <div>{volumes.foundationVolume} m³</div>
+                  <div>{volumes.pedestalVolume} m³</div>
+                  <div>{volumes.total} m³</div>
+                </div>
+              ))}
+
+              {/* Total Row */}
+              <div className="grid grid-cols-6 gap-4 p-2 border-t font-semibold text-center bg-gray-100">
+                <div>Total</div>
+                <div></div>
+                <div>{totalLeanConcrete.toFixed(2)} m³</div>
+                <div>{totalFoundationVolume.toFixed(2)} m³</div>
+                <div>{totalPedestalVolume.toFixed(2)} m³</div>
+                <div>{totalOverall.toFixed(2)} m³</div>
+              </div>
             </div>
           </Card>
         </Card>
