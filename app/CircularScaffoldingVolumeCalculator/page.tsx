@@ -74,10 +74,11 @@ const CircularScaffoldingVolumeCalculator: React.FC = () => {
             <div className="col-span-4">
               <Input
                 id="innerDiameter"
-                className="border-gray-300 rounded-md shadow-sm"
+                className={`border-gray-300 rounded-md shadow-sm ${errors.innerDiameter ? 'border-red-500' : ''}`}
                 placeholder="Inner Diameter of Scaffolding"
-                {...register('innerDiameter')}
+                {...register('innerDiameter', { required: 'Inner Diameter is required' })}
               />
+              {errors.innerDiameter && <span className="text-red-500">{errors.innerDiameter.message}</span>}
             </div>
           </div>
 
@@ -91,6 +92,7 @@ const CircularScaffoldingVolumeCalculator: React.FC = () => {
                 placeholder="Outer Diameter of Scaffolding"
                 {...register('outerDiameter')}
               />
+               {errors.outerDiameter && <span className="text-red-500">{errors.outerDiameter.message}</span>}
             </div>
           </div>
 
@@ -104,6 +106,7 @@ const CircularScaffoldingVolumeCalculator: React.FC = () => {
                 placeholder="Width of Scaffolding"
                 {...register('width')}
               />
+                {errors.width && <span className="text-red-500">{errors.width.message}</span>}
             </div>
           </div>
 
@@ -117,6 +120,7 @@ const CircularScaffoldingVolumeCalculator: React.FC = () => {
                 placeholder="Height of Scaffolding"
                 {...register('height')}
               />
+               {errors.height && <span className="text-red-500">{errors.height.message}</span>}
             </div>
           </div>
 
