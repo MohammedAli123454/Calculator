@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
-import { Card } from '@/components/ui/card'; 
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormItem, FormLabel, FormControl } from "@/components/ui/form";
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'; 
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import * as ExcelJS from 'exceljs';
+import Image from 'next/image';
 
 interface FormData {
   foundationLength: string;
@@ -36,6 +38,7 @@ const FoundationVolumeCalculator: React.FC = () => {
   const { register, handleSubmit, getValues } = methods;
 
   const [unit, setUnit] = useState<'mm' | 'm' | 'inches'>('mm');
+  const [showImage, setShowImage] = useState(false); // State to toggle image visibility
   const [volumes, setVolumes] = useState({
     foundationVolume: 0,
     leanConcreteVolume: 0,
@@ -103,7 +106,102 @@ const FoundationVolumeCalculator: React.FC = () => {
     totalPedestalVolume += volumes.pedestalVolume;
     totalOverall += volumes.total;
   }
+  // Function to export the data to Excel using ExcelJS
+  const exportToExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Foundation Volumes');
 
+    // Define column headers
+    worksheet.columns = [
+      { header: 'S.No', key: 'serial', width: 10 },
+      { header: 'Type', key: 'type', width: 20 },
+      { header: 'Lean Concrete', key: 'leanConcrete', width: 20 },
+      { header: 'Foundation', key: 'foundation', width: 20 },
+      { header: 'Pedestal', key: 'pedestal', width: 20 },
+      { header: 'Total', key: 'total', width: 20 },
+    ];
+
+    // Add data rows
+    for (let i = 0; i < totalFoundationCount; i++) {
+      const row = worksheet.addRow({
+        serial: i + 1,
+        type: getValues('type'),
+        leanConcrete: `${volumes.leanConcreteVolume} m³`,
+        foundation: `${volumes.foundationVolume} m³`,
+        pedestal: `${volumes.pedestalVolume} m³`,
+        total: `${volumes.total} m³`,
+      });
+
+      // Set row height
+      row.height = 20;
+
+      // Set borders for all cells in this row
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+        // Set alignment to center for all cells
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      });
+    }
+
+    // Add the total row
+    const totalRow = worksheet.addRow({
+      serial: 'Total',
+      type: '',
+      leanConcrete: `${totalLeanConcrete.toFixed(2)} m³`,
+      foundation: `${totalFoundationVolume.toFixed(2)} m³`,
+      pedestal: `${totalPedestalVolume.toFixed(2)} m³`,
+      total: `${totalOverall.toFixed(2)} m³`,
+    });
+
+    // Set row height and borders for the total row
+    totalRow.height = 20;
+    totalRow.eachCell((cell) => {
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' },
+      };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.font = { bold: true }; // Make the total row bold
+    });
+
+    // Set styles for the header row
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true, size: 12 };
+    headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+    headerRow.height = 20; // Set header row height
+
+    // Add borders to the header row
+    headerRow.eachCell((cell) => {
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' },
+      };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    });
+
+    // Write the Excel file to the browser
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.download = 'foundation_volumes.xlsx';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const toggleImageVisibility = () => {
+    setShowImage(prevState => !prevState); // Toggle image visibility
+  };
   return (
     <FormProvider {...methods}>
       <div className="p-6 bg-gray-100 min-h-screen flex justify-center items-center">
@@ -232,10 +330,54 @@ const FoundationVolumeCalculator: React.FC = () => {
               </div>
             </Card>
 
+
+
+
             <Button type="submit" className="mt-5 bg-indigo-600 text-white w-full">
               Calculate
             </Button>
           </form>
+
+
+          {/* Show Explanation Button */}
+          <Button
+            type="button"
+            className="mt-4 ml-4 bg-green-600 text-white"
+            onClick={toggleImageVisibility}
+          >
+            Show Explanation
+          </Button>
+
+
+          {/* Image Display - Full-screen dialog */}
+          {showImage && (
+            <div
+              className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50"
+              onClick={toggleImageVisibility}
+            >
+              <div
+                className="relative bg-white p-4 rounded-lg max-w-4xl max-h-full overflow-auto"
+                onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the image
+              >
+                <Image
+                  src="/volume.jpeg"
+                  alt="Circular scaffolding explanation"
+                  width={1000} // Set an appropriate width for the image
+                  height={1000} // Set an appropriate height for the image
+                  className="rounded-lg"
+                />
+                <Button
+                  onClick={toggleImageVisibility}
+                  className="absolute top-4 right-4 bg-red-600 text-white rounded-full p-2"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+
+
+
 
           <Card className="p-5 mt-8 bg-gray-50">
             <h3 className="font-semibold mb-4 text-gray-700">Concrete Volume in m³</h3>
@@ -273,6 +415,13 @@ const FoundationVolumeCalculator: React.FC = () => {
               </div>
             </div>
           </Card>
+          <Button
+            type="button"
+            className="mt-4 ml-4"
+            onClick={exportToExcel}
+          >
+            Export to Excel
+          </Button>
         </Card>
       </div>
     </FormProvider>

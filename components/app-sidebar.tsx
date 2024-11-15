@@ -37,6 +37,10 @@ const data = {
           title: "Concrete Calculation",
           url: "/CalculateFoundationConcrete",
         },
+        {
+          title: "Scaffolding Calculation",
+          url: "/CircularScaffoldingVolumeCalculator",
+        },
       ],
     },
     // {
