@@ -2,14 +2,13 @@
 
 import { useState } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
-import { Card } from '@/components/ui/card'; // Adjust path as needed
+import { Card } from '@/components/ui/card'; 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { FormItem, FormLabel, FormControl } from "@/components/ui/form";
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'; // Adjust import path as needed
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'; 
 
-// Define the TypeScript interface for form data
 interface FormData {
   foundationLength: string;
   foundationWidth: string;
@@ -37,8 +36,6 @@ const FoundationVolumeCalculator: React.FC = () => {
 
   const { register, handleSubmit, getValues } = methods;
 
-  const [openDialog, setOpenDialog] = useState(false);
-  const [dialogMessage, setDialogMessage] = useState('');
   const [unit, setUnit] = useState<'mm' | 'm' | 'inches'>('mm');
   const [volumes, setVolumes] = useState({
     foundationVolume: 0,
@@ -46,7 +43,6 @@ const FoundationVolumeCalculator: React.FC = () => {
     pedestalVolume: 0,
     total: 0,
   });
-  const [dialogContent, setDialogContent] = useState<'image' | 'text'>('text'); // New state for dialog content type
 
   const convertToMeters = (value: number): number => {
     switch (unit) {
@@ -95,10 +91,8 @@ const FoundationVolumeCalculator: React.FC = () => {
     return `${baseText} in ${unitText}`;
   };
 
-  // Get the number of typical foundations
   const totalFoundationCount = parseInt(getValues('totalFoundation'), 10) || 0;
 
-  // Total sums for all rows
   let totalLeanConcrete = 0;
   let totalFoundationVolume = 0;
   let totalPedestalVolume = 0;
@@ -114,32 +108,11 @@ const FoundationVolumeCalculator: React.FC = () => {
   return (
     <FormProvider {...methods}>
       <div className="p-6 bg-gray-100 min-h-screen flex justify-center items-center">
-        <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-          <DialogContent className="w-full max-w-[95%] max-h-[95vh] p-0 overflow-hidden">
-            <DialogTitle>Notification</DialogTitle>
-            <DialogDescription className="overflow-y-auto max-h-[80vh]">
-              {dialogContent === 'image' ? (
-                <img
-                  src="/volume.jpeg"
-                  alt="Volume Diagram"
-                  className="w-full h-auto max-h-full"
-                />
-              ) : (
-                dialogMessage
-              )}
-            </DialogDescription>
-            <Button onClick={() => setOpenDialog(false)} className="mt-4">
-              OK
-            </Button>
-          </DialogContent>
-        </Dialog>
-
         <Card className="p-6 shadow-lg w-full max-w-4xl bg-white rounded-md">
           <h2 className="text-center mb-2 font-semibold text-xl text-gray-800">
             Foundation and Pedestal Volume Calculator
           </h2>
 
-          {/* Unit Selection Radio Group (Flexed Horizontally) */}
           <div className="mb-5 flex gap-4 justify-center">
             <RadioGroup
               onValueChange={(value) => setUnit(value as 'mm' | 'm' | 'inches')}
@@ -168,10 +141,9 @@ const FoundationVolumeCalculator: React.FC = () => {
           </div>
 
           <form onSubmit={handleSubmit(calculateVolume)} className="space-y-6">
-            {/* Foundation and Pedestal Inputs Cards (Side by Side) */}
             <div className="flex gap-6">
               {/* Foundation Inputs Card */}
-              <Card className="p-5 bg-gray-50 w-full sm:w-1/2 md:w-1/2"> {/* Ensuring flex-wrap and proper widths */}
+              <Card className="p-5 bg-gray-50 w-full sm:w-1/2 md:w-1/2">
                 <h3 className="font-semibold mb-2 text-gray-700">Foundation Inputs</h3>
                 <div className="grid grid-cols-5 gap-4 items-center">
                   <label className="col-span-1 text-md font-medium text-gray-600 mb-2">Length</label>
@@ -204,7 +176,7 @@ const FoundationVolumeCalculator: React.FC = () => {
               </Card>
 
               {/* Pedestal Inputs Card */}
-              <Card className="p-5 bg-gray-50 w-full sm:w-1/2 md:w-1/2"> {/* Ensuring flex-wrap and proper widths */}
+              <Card className="p-5 bg-gray-50 w-full sm:w-1/2 md:w-1/2">
                 <h3 className="font-semibold mb-2 text-gray-700">Pedestal Inputs</h3>
                 <div className="grid grid-cols-5 gap-4 items-center">
                   <label className="col-span-1 text-md font-medium text-gray-600 mb-2">Length</label>
@@ -237,7 +209,7 @@ const FoundationVolumeCalculator: React.FC = () => {
               </Card>
             </div>
 
-            {/* Typical Foundations Card (Full Width) */}
+            {/* Typical Foundations Card */}
             <Card className="p-5 bg-gray-50 w-full">
               <h3 className="font-semibold mb-2 text-gray-700">Typical Foundations Numbers</h3>
               <div className="grid grid-cols-5 gap-4 items-center">
@@ -245,7 +217,7 @@ const FoundationVolumeCalculator: React.FC = () => {
                 <div className="col-span-4">
                   <Input
                     className="border-gray-300 rounded-md shadow-sm"
-                    placeholder="Foundations Type"
+                    placeholder="Foundation Type"
                     {...register('type')}
                   />
                 </div>
@@ -254,20 +226,18 @@ const FoundationVolumeCalculator: React.FC = () => {
                 <div className="col-span-4">
                   <Input
                     className="border-gray-300 rounded-md shadow-sm"
-                    placeholder="Typical Foundations Numbers"
+                    placeholder="Total Foundations"
                     {...register('totalFoundation')}
                   />
                 </div>
               </div>
             </Card>
 
-            {/* Submit Button */}
             <Button type="submit" className="mt-5 bg-indigo-600 text-white w-full">
               Calculate
             </Button>
           </form>
 
-          {/* Results Table */}
           <Card className="p-5 mt-8 bg-gray-50">
             <h3 className="font-semibold mb-4 text-gray-700">Concrete Volume in m³</h3>
             <div className="w-full">
@@ -281,12 +251,9 @@ const FoundationVolumeCalculator: React.FC = () => {
                 <div>Total</div>
               </div>
 
-              {/* Table Body - Repeat for each typical foundation */}
+              {/* Table Body */}
               {Array.from({ length: totalFoundationCount }, (_, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-6 gap-4 p-2 border-t text-center"
-                >
+                <div key={index} className="grid grid-cols-6 gap-4 p-2 border-t text-center">
                   <div>{index + 1}</div>
                   <div>{getValues('type')}</div>
                   <div>{volumes.leanConcreteVolume} m³</div>
