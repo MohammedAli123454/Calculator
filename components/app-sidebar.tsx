@@ -41,6 +41,10 @@ const data = {
           title: "Scaffolding Calculation",
           url: "/CircularScaffoldingVolumeCalculator",
         },
+        {
+          title: "Modern Table",
+          url: "/customTable",
+        },
       ],
     },
     // {
