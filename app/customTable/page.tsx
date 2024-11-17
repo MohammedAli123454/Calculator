@@ -3,6 +3,7 @@ import { faker } from "@faker-js/faker";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -60,17 +61,17 @@ export default function EmployeeDataTable() {
     refetchOnWindowFocus: false,
   });
 
-  // Memoize the unique values for departments, positions, and locations
+  // Memoize the unique values for departments, positions, and locations, limited to 10
   const uniqueDepartments = useMemo(
-    () => Array.from(new Set(employeeData.map((item) => item.department))) as string[],
+    () => Array.from(new Set(employeeData.map((item) => item.department))).slice(0, 10),
     [employeeData]
   );
   const uniquePositions = useMemo(
-    () => Array.from(new Set(employeeData.map((item) => item.position))) as string[],
+    () => Array.from(new Set(employeeData.map((item) => item.position))).slice(0, 10),
     [employeeData]
   );
   const uniqueLocations = useMemo(
-    () => Array.from(new Set(employeeData.map((item) => item.location))) as string[],
+    () => Array.from(new Set(employeeData.map((item) => item.location))).slice(0, 10),
     [employeeData]
   );
 
@@ -103,53 +104,65 @@ export default function EmployeeDataTable() {
 
   return (
     <div className="p-4">
-      {/* Filters */}
-      <div className="flex space-x-4 mb-4">
-        <Select onValueChange={setSelectedDepartment} value={selectedDepartment}>
-          <SelectTrigger>
-            <SelectValue placeholder="All Departments" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Departments</SelectItem>
-            {uniqueDepartments.map((dept) => (
-              <SelectItem key={dept} value={dept}>
-                {dept}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+   {/* Filters */}
+<div className="grid grid-cols-4 gap-4 mb-4 items-center">
+  {/* Department Select */}
+  <Select onValueChange={setSelectedDepartment} value={selectedDepartment}>
+    <SelectTrigger>
+      <SelectValue placeholder="All Departments" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="all">All Departments</SelectItem>
+      {uniqueDepartments.map((dept) => (
+        <SelectItem key={dept} value={dept}>
+          {dept}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
 
-        <Select onValueChange={setSelectedPosition} value={selectedPosition}>
-          <SelectTrigger>
-            <SelectValue placeholder="All Positions" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Positions</SelectItem>
-            {uniquePositions.map((pos) => (
-              <SelectItem key={pos} value={pos}>
-                {pos}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+  {/* Position Select */}
+  <Select onValueChange={setSelectedPosition} value={selectedPosition}>
+    <SelectTrigger>
+      <SelectValue placeholder="All Positions" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="all">All Positions</SelectItem>
+      {uniquePositions.map((pos) => (
+        <SelectItem key={pos} value={pos}>
+          {pos}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
 
-        <Select onValueChange={setSelectedLocation} value={selectedLocation}>
-          <SelectTrigger>
-            <SelectValue placeholder="All Locations" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Locations</SelectItem>
-            {uniqueLocations.map((loc) => (
-              <SelectItem key={loc} value={loc}>
-                {loc}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+  {/* Location Select */}
+  <Select onValueChange={setSelectedLocation} value={selectedLocation}>
+    <SelectTrigger>
+      <SelectValue placeholder="All Locations" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="all">All Locations</SelectItem>
+      {uniqueLocations.map((loc) => (
+        <SelectItem key={loc} value={loc}>
+          {loc}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
 
-      {/* Field Selection */}
-      <div className="flex space-x-4 mb-4">
+  {/* Field Selection Button */}
+  <Dialog>
+    <DialogTrigger>
+      <button className="w-full px-4 py-2 bg-blue-600 text-white rounded">
+        Select Fields
+      </button>
+    </DialogTrigger>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Select Fields to Display</DialogTitle>
+      </DialogHeader>
+      <div className="flex flex-col space-y-2">
         {fields.map((field) => (
           <label key={field.key} className="flex items-center space-x-2">
             <Checkbox
@@ -160,19 +173,52 @@ export default function EmployeeDataTable() {
           </label>
         ))}
       </div>
+    </DialogContent>
+  </Dialog>
+</div>
+
+
+
+    
 
       {/* Table Header */}
-      <div className="grid grid-cols-6 gap-4 font-semibold text-gray-700 border-b pb-2">
+      <div className="grid grid-cols-12 gap-4 font-semibold text-gray-700 border-b pb-2">
         {selectedFields.map((field) => (
-          <div key={field.key}>{field.label}</div>
+          <div
+            key={field.key}
+            className={`${
+              field.key === "id" ? "col-span-1" :
+              field.key === "name" ? "col-span-3" :
+              field.key === "department" ? "col-span-2" :
+              field.key === "position" ? "col-span-2" :
+              field.key === "salary" ? "col-span-2" :
+              field.key === "hireDate" ? "col-span-1" :
+              "col-span-1"
+            }`}
+          >
+            {field.label}
+          </div>
         ))}
       </div>
 
       {/* Table Data */}
       {filteredData.map((item) => (
-        <div key={item.id} className="grid grid-cols-6 gap-4 py-2 border-b text-gray-600">
+        <div key={item.id} className="grid grid-cols-12 gap-4 py-2 border-b text-gray-600">
           {selectedFields.map((field) => (
-            <div key={field.key}>{item[field.key as keyof Employee]}</div>
+            <div
+              key={field.key}
+              className={`${
+                field.key === "id" ? "col-span-1" :
+                field.key === "name" ? "col-span-3" :
+                field.key === "department" ? "col-span-2" :
+                field.key === "position" ? "col-span-2" :
+                field.key === "salary" ? "col-span-2" :
+                field.key === "hireDate" ? "col-span-1" :
+                "col-span-1"
+              }`}
+            >
+              {item[field.key as keyof Employee]}
+            </div>
           ))}
         </div>
       ))}
