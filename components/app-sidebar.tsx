@@ -45,6 +45,10 @@ const data = {
           title: "Modern Table",
           url: "/customTable",
         },
+        {
+          title: "Push Employee Data",
+          url: "/PushData",
+        },
       ],
     },
     // {
