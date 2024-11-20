@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useInfiniteQuery, QueryKey, QueryFunctionContext } from '@tanstack/react-query';
+import { useInfiniteQuery, QueryFunctionContext } from '@tanstack/react-query';
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -22,35 +22,40 @@ import { employee } from "../configs/schema"; // Import the employee table schem
 
 // Define the Employee type based on the employee table structure
 type Employee = {
-    empNo: string;
-    empName: string;
-    siteDesignation: string;
-    designation: string;
-    head: string;
-    department: string;
-    hod: string;
-    doj: string;
-    visa: string;
-    iqamaNo: string;
-    status: string;
-    category: string;
-    payrole: string;
-    sponser: string;
-    project: string;
-    accommodationStatus: string;
-  };
-  
-  // Server action to fetch paginated employee data
-  const fetchEmployeeData = async ({ pageParam = 0, limit = 20 }): Promise<Employee[]> => {
-    try {
-      const employees = await db
-        .select()
-        .from(employee)
-        .offset(pageParam * limit)
-        .limit(limit)
-        .execute();
-  
-      return employees.map((emp) => ({
+  empNo: string;
+  empName: string;
+  siteDesignation: string;
+  designation: string;
+  head: string;
+  department: string;
+  hod: string;
+  doj: string;
+  visa: string;
+  iqamaNo: string;
+  status: string;
+  category: string;
+  payrole: string;
+  sponser: string;
+  project: string;
+  accommodationStatus: string;
+};
+
+// Server action to fetch paginated employee data
+const fetchEmployeeData = async ({ pageParam = 0, limit = 20 }): Promise<{ employees: Employee[], nextCursor: number | null }> => {
+  try {
+    // Fetch the employee data
+    const employees = await db
+      .select()
+      .from(employee)
+      .offset(pageParam * limit)
+      .limit(limit)
+      .execute();
+
+    // Check if there is more data
+    const nextCursor = employees.length === limit ? pageParam + 1 : null;
+
+    return {
+      employees: employees.map((emp) => ({
         empNo: emp.empNo,
         empName: emp.empName,
         siteDesignation: emp.siteDesignation,
@@ -67,13 +72,14 @@ type Employee = {
         sponser: emp.sponser,
         project: emp.project,
         accommodationStatus: emp.accommodationStatus,
-      }));
-    } catch (error) {
-      console.error("Error fetching employee data:", error);
-      throw new Error("Failed to fetch employee data from the database.");
-    }
-  };
-  
+      })),
+      nextCursor,  // Return the nextCursor
+    };
+  } catch (error) {
+    console.error("Error fetching employee data:", error);
+    throw new Error("Failed to fetch employee data from the database.");
+  }
+};
 
 export default function EmployeeDataTable() {
   const [selectedDepartment, setSelectedDepartment] = useState("all");
@@ -100,32 +106,21 @@ export default function EmployeeDataTable() {
 
   const {
     data,
+    error,
     fetchNextPage,
     hasNextPage,
+    isFetching,
     isFetchingNextPage,
-    isLoading,
-    isError,
-    error,
-  } = useInfiniteQuery<Employee[], Error>({
-    queryKey: ["employeeData", selectedDepartment, selectedPosition, selectedLocation],
-  
-    // Correct queryFn with QueryFunctionContext
-    queryFn: async ({ pageParam = 0, signal }: QueryFunctionContext<any>) => {
-      // Explicitly assert that pageParam is a number
-      return fetchEmployeeData({
-        pageParam: pageParam as number,  // Cast pageParam to number
-      });
-    },
-  
-    getNextPageParam: (lastPage) => {
-      return lastPage.length ? lastPage.length : undefined;
-    },
-  
-    initialPageParam: 0, // Start from the first page
-    staleTime: 5 * 60 * 1000, // 5 minutes stale time
-    refetchOnWindowFocus: false,
+    status,
+  } = useInfiniteQuery({
+    queryKey: ['projects'],
+    queryFn: ({ pageParam = 1 }) => fetchEmployeeData({ pageParam, limit: 20 }), // Explicitly pass `limit`
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, pages) => lastPage.nextCursor,
   });
-  const employeeData = data?.pages.flat() || [];
+
+  // Flatten employee data properly
+  const employeeData = data?.pages.flatMap(page => page.employees) || [];
 
   const uniqueDepartments = useMemo(
     () => Array.from(new Set(employeeData.map((item) => item.department))).slice(0, 10),
@@ -166,7 +161,7 @@ export default function EmployeeDataTable() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  if (isLoading) {
+  if (isFetching) {
     return <div>Loading data...</div>;
   }
 
@@ -210,7 +205,6 @@ export default function EmployeeDataTable() {
         return "w-32"; // Default width for any other column
     }
   };
-  
 
   return (
     <div className="p-4">
@@ -290,45 +284,40 @@ export default function EmployeeDataTable() {
       </div>
 
       <div className="overflow-x-auto">
-  {/* Table Header */}
-  <div className="flex font-semibold text-gray-700 bg-gray-200 border-b pb-2">
-    {selectedFields.map((field) => (
-      <div
-        key={field.key}
-        className={`
-          ${getColumnWidth(field.key)} 
-          flex-shrink-0 
-          flex-grow`}
-      >
-        {field.label}
+        {/* Table Header */}
+        <div className="flex font-semibold text-gray-700 bg-gray-200 border-b pb-2">
+          {selectedFields.map((field) => (
+            <div
+              key={field.key}
+              className={`
+                ${getColumnWidth(field.key)} 
+                flex-shrink-0 
+                flex-grow`}
+            >
+              {field.label}
+            </div>
+          ))}
+        </div>
+
+        {/* Table Body */}
+        <div className="flex flex-col">
+          {filteredData.map((item) => (
+            <div key={item.empNo} className="flex border-b py-2">
+              {selectedFields.map((field) => (
+                <div
+                  key={field.key}
+                  className={`
+                    ${getColumnWidth(field.key)}
+                    flex-shrink-0
+                    flex-grow`}
+                >
+                  {item[field.key as keyof Employee]}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
-    ))}
-  </div>
-
-  {/* Table Body */}
-  <div className="flex flex-col">
-  {filteredData.map((item) => (
-      <div
-        // key={index}
-        className="flex border-b py-2"
-      >
-         {selectedFields.map((field) => (
-          <div
-          key={field.key}
-            className={`
-              ${getColumnWidth(field.key)}
-              flex-shrink-0
-              flex-grow`}
-          >
-                 {item[field.key as keyof Employee]}
-          </div>
-        ))}
-      </div>
-    ))}
-  </div>
-</div>
-
-
 
       {/* Loading More Indicator */}
       {isFetchingNextPage && <div className="text-center p-4">Loading more...</div>}
