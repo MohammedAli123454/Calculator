@@ -49,8 +49,15 @@ const data = {
           title: "Push Employee Data",
           url: "/PushData",
         },
+        {
+          title: "Employee Detail",
+          url: "/customEmployeeTable",
+        },
       ],
     },
+
+
+
     // {
     //   title: "Building Your Application",
     //   url: "#",
