@@ -41,17 +41,24 @@ type Employee = {
 };
 
 // Server action to fetch paginated employee data
-const fetchEmployeeData = async ({ pageParam = 0, limit = 20 }): Promise<{ employees: Employee[], nextCursor: number | null }> => {
+const fetchEmployeeData = async ({
+  pageParam = 0,
+  limit = 20,
+}: {
+  pageParam: number;
+  limit: number;
+}): Promise<{ employees: Employee[]; nextCursor: number | null }> => {
   try {
-    // Fetch the employee data
     const employees = await db
       .select()
       .from(employee)
-      .offset(pageParam * limit)
+      .offset(pageParam * limit) // Use `pageParam` for pagination
       .limit(limit)
       .execute();
 
-    // Check if there is more data
+    console.log(`Fetched page ${pageParam} with ${employees.length} employees.`);
+
+    // Determine if there's a next page based on the number of employees fetched
     const nextCursor = employees.length === limit ? pageParam + 1 : null;
 
     return {
@@ -73,13 +80,14 @@ const fetchEmployeeData = async ({ pageParam = 0, limit = 20 }): Promise<{ emplo
         project: emp.project,
         accommodationStatus: emp.accommodationStatus,
       })),
-      nextCursor,  // Return the nextCursor
+      nextCursor,
     };
   } catch (error) {
     console.error("Error fetching employee data:", error);
     throw new Error("Failed to fetch employee data from the database.");
   }
 };
+
 
 export default function EmployeeDataTable() {
   const [selectedDepartment, setSelectedDepartment] = useState("all");
@@ -109,14 +117,16 @@ export default function EmployeeDataTable() {
     error,
     fetchNextPage,
     hasNextPage,
-    isFetching,
     isFetchingNextPage,
     status,
+    isFetching,
   } = useInfiniteQuery({
-    queryKey: ['projects'],
-    queryFn: ({ pageParam = 1 }) => fetchEmployeeData({ pageParam, limit: 20 }), // Explicitly pass `limit`
+    queryKey: ["projects"],
+    queryFn: ({ pageParam = 1 }) => fetchEmployeeData({ pageParam, limit: 20 }),
     initialPageParam: 0,
-    getNextPageParam: (lastPage, pages) => lastPage.nextCursor,
+    getNextPageParam: (lastPage, pages) => 
+      lastPage.nextCursor ? pages.length + 1 : undefined,
+     staleTime: 1000 * 60 * 10,
   });
 
   // Flatten employee data properly
@@ -147,6 +157,8 @@ export default function EmployeeDataTable() {
 
   // Simplified scrolling logic without IntersectionObserver
   useEffect(() => {
+    let isMounted = true;  // flag to track component mount state
+  
     const handleScroll = () => {
       if (
         window.innerHeight + window.scrollY >= document.body.offsetHeight - 200 &&
@@ -156,15 +168,26 @@ export default function EmployeeDataTable() {
         fetchNextPage();
       }
     };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+  
+    if (typeof window !== "undefined") {
+      window.addEventListener("scroll", handleScroll);
+    }
+  
+    // Cleanup: Set isMounted to false when the component is unmounted
+    return () => {
+      isMounted = false;
+      if (typeof window !== "undefined") {
+        window.removeEventListener("scroll", handleScroll);
+      }
+    };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  
+  
+  
 
-  if (isFetching) {
-    return <div>Loading data...</div>;
-  }
-
+if (isFetching) {
+  return <div>Loading data...</div>;
+}
   const selectedFields = fields.filter((field) => field.selected);
 
   const getColumnWidth = (key: string): string => {
@@ -206,6 +229,7 @@ export default function EmployeeDataTable() {
     }
   };
 
+ 
   return (
     <div className="p-4">
       {/* Filters */}
