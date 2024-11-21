@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Checkbox } from "@/components/ui/checkbox";
 import { sql } from "drizzle-orm";
 import {
@@ -46,6 +46,35 @@ type Field = {
   selected: boolean;
   colSpan: number;
 };
+
+interface EmployeeRow {
+  department: string;
+  designation: string;
+  project: string;
+}
+
+// Fetch unique records
+const fetchUniqueRecords = async () => {
+  try {
+    // Execute raw SQL queries for distinct records
+    const [departmentsResult, positionsResult, locationsResult] = await Promise.all([
+      db.execute(sql`SELECT DISTINCT department FROM employee`),
+      db.execute(sql`SELECT DISTINCT designation FROM employee`),
+      db.execute(sql`SELECT DISTINCT project FROM employee`)
+    ]);
+
+    // Safely cast the result rows using a type guard
+    const uniqueDepartments: string[] = (departmentsResult.rows as { department: string }[]).map((row) => row.department);
+    const uniquePositions: string[] = (positionsResult.rows as { designation: string }[]).map((row) => row.designation);
+    const uniqueLocations: string[] = (locationsResult.rows as { project: string }[]).map((row) => row.project);
+
+    return { uniqueDepartments, uniquePositions, uniqueLocations };
+  } catch (error) {
+    console.error('Error fetching unique records:', error);
+    return { uniqueDepartments: [], uniquePositions: [], uniqueLocations: [] };
+  }
+};
+
 
 // Fetch paginated employee data
 const fetchEmployeeData = async ({
@@ -94,7 +123,7 @@ export default function EmployeeDataTable() {
   const [fields, setFields] = useState([
     { key: "empNo", label: "Employee No", selected: true, colSpan: 2 },
     { key: "empName", label: "Employee Name", selected: true, colSpan: 3 },
-    { key: "siteDesignation", label: "Site Designation", selected: true, colSpan: 2 },
+    { key: "siteDesignation", label: "Site Designation", selected: true, colSpan: 4 },
     { key: "designation", label: "Designation", selected: true, colSpan: 2 },
     { key: "head", label: "Head", selected: true, colSpan: 2 },
     { key: "department", label: "Department", selected: true, colSpan: 2 },
@@ -131,18 +160,16 @@ export default function EmployeeDataTable() {
 
   const employeeData = data?.pages.flatMap((page) => page.employees) || [];
 
-  const uniqueDepartments = useMemo(
-    () => Array.from(new Set(employeeData.map((item) => item.department))).slice(0, 10),
-    [employeeData]
-  );
-  const uniquePositions = useMemo(
-    () => Array.from(new Set(employeeData.map((item) => item.designation))).slice(0, 10),
-    [employeeData]
-  );
-  const uniqueLocations = useMemo(
-    () => Array.from(new Set(employeeData.map((item) => item.project))).slice(0, 10),
-    [employeeData]
-  );
+ // Fetch unique departments, positions, and locations once
+ const { data: uniqueRecords, isLoading: loadingUniqueRecords, error: uniqueRecordsError } = useQuery({
+  queryKey: ["uniqueRecords"],  // Unique key for the query
+  queryFn: fetchUniqueRecords,  // The function that fetches the unique records
+  staleTime: 5 * 60 * 1000,      // Cache the data for 5 minutes
+});
+
+const uniqueDepartments = useMemo(() => uniqueRecords?.uniqueDepartments || [], [uniqueRecords]);
+const uniquePositions = useMemo(() => uniqueRecords?.uniquePositions || [], [uniqueRecords]);
+const uniqueLocations = useMemo(() => uniqueRecords?.uniqueLocations || [], [uniqueRecords]);
 
   const filteredData = useMemo(() => {
     return employeeData.filter((item) => {
@@ -184,7 +211,7 @@ export default function EmployeeDataTable() {
       case "empName":
         return "w-48";
       case "siteDesignation":
-        return "w-32";
+        return "w-";
       case "designation":
         return "w-32";
       case "head":
