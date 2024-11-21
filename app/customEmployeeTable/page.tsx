@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useInfiniteQuery, QueryFunctionContext } from '@tanstack/react-query';
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -40,7 +40,7 @@ type Employee = {
   accommodationStatus: string;
 };
 
-// Server action to fetch paginated employee data
+// Fetch paginated employee data
 const fetchEmployeeData = async ({
   pageParam = 0,
   limit = 20,
@@ -48,47 +48,23 @@ const fetchEmployeeData = async ({
   pageParam: number;
   limit: number;
 }): Promise<{ employees: Employee[]; nextCursor: number | null }> => {
-  try {
-    const employees = await db
-      .select()
-      .from(employee)
-      .offset(pageParam * limit) // Use `pageParam` for pagination
-      .limit(limit)
-      .execute();
+  const employees = await db
+    .select()
+    .from(employee)
+    .offset(pageParam * limit)
+    .limit(limit)
+    .execute();
 
-    console.log(`Fetched page ${pageParam} with ${employees.length} employees.`);
+  const nextCursor = employees.length === limit ? pageParam + 1 : null;
 
-    // Determine if there's a next page based on the number of employees fetched
-    const nextCursor = employees.length === limit ? pageParam + 1 : null;
-
-    return {
-      employees: employees.map((emp) => ({
-        empNo: emp.empNo,
-        empName: emp.empName,
-        siteDesignation: emp.siteDesignation,
-        designation: emp.designation,
-        head: emp.head,
-        department: emp.department,
-        hod: emp.hod,
-        doj: emp.doj.toString().split("T")[0],
-        visa: emp.visa,
-        iqamaNo: emp.iqamaNo,
-        status: emp.status,
-        category: emp.category,
-        payrole: emp.payrole,
-        sponser: emp.sponser,
-        project: emp.project,
-        accommodationStatus: emp.accommodationStatus,
-      })),
-      nextCursor,
-    };
-  } catch (error) {
-    console.error("Error fetching employee data:", error);
-    throw new Error("Failed to fetch employee data from the database.");
-  }
+  return {
+    employees: employees.map((emp) => ({
+      ...emp,
+      doj: emp.doj.toString().split("T")[0],
+    })),
+    nextCursor,
+  };
 };
-
-
 export default function EmployeeDataTable() {
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [selectedPosition, setSelectedPosition] = useState("all");
@@ -112,25 +88,23 @@ export default function EmployeeDataTable() {
     { key: "accommodationStatus", label: "Accommodation Status", selected: true, colSpan: 3 },
   ]);
 
+  const observerTargetRef = useRef<HTMLDivElement | null>(null);
+
   const {
     data,
-    error,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage,
-    status,
     isFetching,
+    isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: ["projects"],
-    queryFn: ({ pageParam = 1 }) => fetchEmployeeData({ pageParam, limit: 20 }),
+    queryKey: ["employees"],
+    queryFn: ({ pageParam = 0 }) => fetchEmployeeData({ pageParam, limit: 20 }),
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    staleTime: 10 * 60 * 1000,
     initialPageParam: 0,
-    getNextPageParam: (lastPage, pages) => 
-      lastPage.nextCursor ? pages.length + 1 : undefined,
-     staleTime: 1000 * 60 * 10,
   });
-
-  // Flatten employee data properly
-  const employeeData = data?.pages.flatMap(page => page.employees) || [];
+  
+  const employeeData = data?.pages.flatMap((page) => page.employees) || [];
 
   const uniqueDepartments = useMemo(
     () => Array.from(new Set(employeeData.map((item) => item.department))).slice(0, 10),
@@ -155,39 +129,29 @@ export default function EmployeeDataTable() {
     });
   }, [employeeData, selectedDepartment, selectedPosition, selectedLocation]);
 
-  // Simplified scrolling logic without IntersectionObserver
+  // Infinite scrolling with IntersectionObserver
   useEffect(() => {
-    let isMounted = true;  // flag to track component mount state
-  
-    const handleScroll = () => {
-      if (
-        window.innerHeight + window.scrollY >= document.body.offsetHeight - 200 &&
-        hasNextPage &&
-        !isFetchingNextPage
-      ) {
-        fetchNextPage();
-      }
-    };
-  
-    if (typeof window !== "undefined") {
-      window.addEventListener("scroll", handleScroll);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (observerTargetRef.current) {
+      observer.observe(observerTargetRef.current);
     }
-  
-    // Cleanup: Set isMounted to false when the component is unmounted
+
     return () => {
-      isMounted = false;
-      if (typeof window !== "undefined") {
-        window.removeEventListener("scroll", handleScroll);
+      if (observerTargetRef.current) {
+        observer.unobserve(observerTargetRef.current);
       }
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-  
-  
-  
 
-if (isFetching) {
-  return <div>Loading data...</div>;
-}
+
   const selectedFields = fields.filter((field) => field.selected);
 
   const getColumnWidth = (key: string): string => {
@@ -278,9 +242,9 @@ if (isFetching) {
 
         <Dialog>
           <DialogTrigger>
-            <button className="w-full px-4 py-2 bg-blue-600 text-white rounded">
-              Select Fields
-            </button>
+          <span className="w-full px-4 py-2 bg-blue-600 text-white rounded">
+    Open Dialog
+  </span>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
