@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useInfiniteQuery, QueryFunctionContext } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { Checkbox } from "@/components/ui/checkbox";
+import { sql } from "drizzle-orm";
 import {
   Dialog,
   DialogContent,
@@ -20,7 +21,6 @@ import {
 import { db } from "../configs/db"; // Import your Drizzle database configuration
 import { employee } from "../configs/schema"; // Import the employee table schema
 
-// Define the Employee type based on the employee table structure
 type Employee = {
   empNo: string;
   empName: string;
@@ -40,31 +40,53 @@ type Employee = {
   accommodationStatus: string;
 };
 
+type Field = {
+  key: keyof Employee; // Ensure key is a key of Employee type
+  label: string;
+  selected: boolean;
+  colSpan: number;
+};
+
 // Fetch paginated employee data
 const fetchEmployeeData = async ({
-  pageParam = 0,
+  pageParam = 1,
   limit = 20,
 }: {
   pageParam: number;
   limit: number;
 }): Promise<{ employees: Employee[]; nextCursor: number | null }> => {
-  const employees = await db
-    .select()
-    .from(employee)
-    .offset(pageParam * limit)
-    .limit(limit)
-    .execute();
+  try {
+    // Fetch employees with pagination logic
+    const employees = await db
+      .select()
+      .from(employee)
+      .offset((pageParam - 1) * limit) // Adjust for 1-based pagination
+      .limit(limit)
+      .execute();
 
-  const nextCursor = employees.length === limit ? pageParam + 1 : null;
+    // Count query to determine the total number of employees
+    const countResult = await db.execute(sql`SELECT COUNT(*) FROM employee`);
+    const totalEmployeeCount = Number(countResult.rows[0]?.count) || 0;
 
-  return {
-    employees: employees.map((emp) => ({
-      ...emp,
-      doj: emp.doj.toString().split("T")[0],
-    })),
-    nextCursor,
-  };
+    // Calculate the next page cursor based on the total count and current page
+    const nextCursor = (pageParam * limit) < totalEmployeeCount ? pageParam + 1 : null;
+
+    return {
+      employees: employees.map((emp) => ({
+        ...emp,
+        doj: emp.doj.toString().split('T')[0], // Format the date of joining
+      })),
+      nextCursor,
+    };
+  } catch (error) {
+    console.error('Error fetching employee data:', error);
+    return {
+      employees: [],
+      nextCursor: null,
+    };
+  }
 };
+
 export default function EmployeeDataTable() {
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [selectedPosition, setSelectedPosition] = useState("all");
@@ -92,18 +114,21 @@ export default function EmployeeDataTable() {
 
   const {
     data,
+    error,
     fetchNextPage,
     hasNextPage,
     isFetching,
     isFetchingNextPage,
+    status,
   } = useInfiniteQuery({
     queryKey: ["employees"],
-    queryFn: ({ pageParam = 0 }) => fetchEmployeeData({ pageParam, limit: 20 }),
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
-    staleTime: 10 * 60 * 1000,
-    initialPageParam: 0,
+    queryFn: ({ pageParam = 1 }) => fetchEmployeeData({ pageParam, limit: 20 }), // Fetches employee data with pageParam
+    initialPageParam: 1, // Starts with page 1
+    getNextPageParam: (lastPage) => {
+      return lastPage.nextCursor ?? undefined; // If there is no nextCursor, return undefined to indicate no more pages
+    },
   });
-  
+
   const employeeData = data?.pages.flatMap((page) => page.employees) || [];
 
   const uniqueDepartments = useMemo(
@@ -129,7 +154,6 @@ export default function EmployeeDataTable() {
     });
   }, [employeeData, selectedDepartment, selectedPosition, selectedLocation]);
 
-  // Infinite scrolling with IntersectionObserver
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -137,13 +161,13 @@ export default function EmployeeDataTable() {
           fetchNextPage();
         }
       },
-      { threshold: 1.0 }
+      { threshold: 0.5 }
     );
-
+  
     if (observerTargetRef.current) {
       observer.observe(observerTargetRef.current);
     }
-
+  
     return () => {
       if (observerTargetRef.current) {
         observer.unobserve(observerTargetRef.current);
@@ -151,49 +175,47 @@ export default function EmployeeDataTable() {
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-
   const selectedFields = fields.filter((field) => field.selected);
 
   const getColumnWidth = (key: string): string => {
     switch (key) {
       case "empNo":
-        return "w-24"; // Employee No column width
+        return "w-24";
       case "empName":
-        return "w-48"; // Employee Name column width
+        return "w-48";
       case "siteDesignation":
-        return "w-32"; // Site Designation column width
+        return "w-32";
       case "designation":
-        return "w-32"; // Designation column width
+        return "w-32";
       case "head":
-        return "w-32"; // Head column width
+        return "w-32";
       case "department":
-        return "w-36"; // Department column width
+        return "w-36";
       case "hod":
-        return "w-32"; // HOD column width
+        return "w-32";
       case "doj":
-        return "w-32"; // Date of Joining column width
+        return "w-32";
       case "visa":
-        return "w-32"; // Visa column width
+        return "w-32";
       case "iqamaNo":
-        return "w-32"; // Iqama No column width
+        return "w-32";
       case "status":
-        return "w-20"; // Status column width
+        return "w-20";
       case "category":
-        return "w-24"; // Category column width
+        return "w-24";
       case "payrole":
-        return "w-32"; // Payrole column width
+        return "w-32";
       case "sponser":
-        return "w-32"; // Sponser column width
+        return "w-32";
       case "project":
-        return "w-40"; // Project column width
+        return "w-40";
       case "accommodationStatus":
-        return "w-40"; // Accommodation Status column width
+        return "w-40";
       default:
-        return "w-32"; // Default width for any other column
+        return "w-32";
     }
   };
 
- 
   return (
     <div className="p-4">
       {/* Filters */}
@@ -203,10 +225,9 @@ export default function EmployeeDataTable() {
             <SelectValue placeholder="All Departments" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Departments</SelectItem>
-            {uniqueDepartments.map((dept) => (
-              <SelectItem key={dept} value={dept}>
-                {dept}
+            {["all", ...uniqueDepartments].map((department) => (
+              <SelectItem key={department} value={department}>
+                {department}
               </SelectItem>
             ))}
           </SelectContent>
@@ -217,10 +238,9 @@ export default function EmployeeDataTable() {
             <SelectValue placeholder="All Positions" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Positions</SelectItem>
-            {uniquePositions.map((pos) => (
-              <SelectItem key={pos} value={pos}>
-                {pos}
+            {["all", ...uniquePositions].map((position) => (
+              <SelectItem key={position} value={position}>
+                {position}
               </SelectItem>
             ))}
           </SelectContent>
@@ -231,46 +251,16 @@ export default function EmployeeDataTable() {
             <SelectValue placeholder="All Locations" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Locations</SelectItem>
-            {uniqueLocations.map((loc) => (
-              <SelectItem key={loc} value={loc}>
-                {loc}
+            {["all", ...uniqueLocations].map((location) => (
+              <SelectItem key={location} value={location}>
+                {location}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-
-        <Dialog>
-          <DialogTrigger>
-          <span className="w-full px-4 py-2 bg-blue-600 text-white rounded">
-    Open Dialog
-  </span>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Select Fields to Display</DialogTitle>
-            </DialogHeader>
-            <div className="grid grid-cols-2 gap-2 mt-4">
-              {fields.map((field, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={field.selected}
-                    onCheckedChange={(checked) =>
-                      setFields((prevFields) => {
-                        const newFields = [...prevFields];
-                        newFields[index].selected = checked as boolean;
-                        return newFields;
-                      })
-                    }
-                  />
-                  <label className="text-sm">{field.label}</label>
-                </div>
-              ))}
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
 
+      {/* Employee Table */}
       <div className="overflow-x-auto">
         {/* Table Header */}
         <div className="flex font-semibold text-gray-700 bg-gray-200 border-b pb-2">
@@ -308,7 +298,7 @@ export default function EmployeeDataTable() {
       </div>
 
       {/* Loading More Indicator */}
-      {isFetchingNextPage && <div className="text-center p-4">Loading more...</div>}
+      <div ref={observerTargetRef} />
     </div>
   );
 }
