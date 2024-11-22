@@ -57,11 +57,6 @@ type Field = {
   maxLength: number;
 };
 
-interface EmployeeRow {
-  department: string;
-  designation: string;
-  project: string;
-}
 
 // Fetch unique records
 const fetchUniqueRecords = async () => {
@@ -89,7 +84,7 @@ const fetchEmployeeData = async ({
 }: {
   pageParam: number;
   limit: number;
-}): Promise<{ employees: Employee[]; nextCursor: number | null }> => {
+}) => {
   try {
     const employees = await db
       .select()
@@ -101,17 +96,21 @@ const fetchEmployeeData = async ({
     const countResult = await db.execute(sql`SELECT COUNT(*) FROM employee`);
     const totalEmployeeCount = Number(countResult.rows[0]?.count) || 0;
 
-    const nextCursor = (pageParam * limit) < totalEmployeeCount ? pageParam + 1 : null;
+    // Add serial numbers dynamically
+    const employeesWithSerial = employees.map((emp, index) => ({
+      ...emp,
+      serial: (pageParam - 1) * limit + index + 1, // Compute serial number
+      doj: emp.doj.toString().split("T")[0], // Format date
+    }));
+
+    const nextCursor = pageParam * limit < totalEmployeeCount ? pageParam + 1 : null;
 
     return {
-      employees: employees.map((emp) => ({
-        ...emp,
-        doj: emp.doj.toString().split('T')[0],
-      })),
+      employees: employeesWithSerial,
       nextCursor,
     };
   } catch (error) {
-    console.error('Error fetching employee data:', error);
+    console.error("Error fetching employee data:", error);
     return {
       employees: [],
       nextCursor: null,
@@ -124,23 +123,23 @@ export default function EmployeeDataTable() {
   const [selectedPosition, setSelectedPosition] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [fields, setFields] = useState([
-    { key: "serial", label: "S.No.", selected: true, colSpan: 1, minWidth: "50px", maxLength: 3 },
-    { key: "empNo", label: "Employee No", selected: true, colSpan: 2, minWidth: "110px", maxLength: 7 },
-    { key: "empName", label: "Employee Name", selected: true, colSpan: 3, minWidth: "220px", maxLength: 20 },
-    { key: "siteDesignation", label: "Site Designation", selected: true, colSpan: 4, minWidth: "220px", maxLength: 20 },
-    { key: "designation", label: "Designation", selected: true, colSpan: 2, minWidth: "220px", maxLength: 20 },
-    { key: "head", label: "Head", selected: true, colSpan: 2, minWidth: "150px", maxLength: 10 },
-    { key: "department", label: "Department", selected: true, colSpan: 2, minWidth: "220px", maxLength: 20 },
-    { key: "hod", label: "HOD", selected: true, colSpan: 2, minWidth: "100px", maxLength: 10 },
-    { key: "doj", label: "Date of Joining", selected: true, colSpan: 2, minWidth: "150px", maxLength: 15 },
-    { key: "visa", label: "Visa", selected: true, colSpan: 2, minWidth: "150px", maxLength: 10 },
-    { key: "iqamaNo", label: "Iqama No", selected: true, colSpan: 2, minWidth: "150px", maxLength: 15 },
-    { key: "status", label: "Status", selected: true, colSpan: 1, minWidth: "100px", maxLength: 10 },
-    { key: "category", label: "Category", selected: true, colSpan: 1, minWidth: "100px", maxLength: 10 },
-    { key: "payrole", label: "Payrole", selected: true, colSpan: 2, minWidth: "150px", maxLength: 10 },
-    { key: "sponser", label: "Sponser", selected: true, colSpan: 2, minWidth: "220px", maxLength: 20 },
-    { key: "project", label: "Project", selected: true, colSpan: 2, minWidth: "220px", maxLength: 20 },
-    { key: "accommodationStatus", label: "Accommodation Status", selected: true, colSpan: 3, minWidth: "200px", maxLength: 10 },
+    { key: "serial", label: "S.No.", selected: true, minWidth: "50px", maxLength: 3 },
+    { key: "empNo", label: "Employee No", selected: true, minWidth: "110px", maxLength: 7 },
+    { key: "empName", label: "Employee Name", selected: true, minWidth: "220px", maxLength: 20 },
+    { key: "siteDesignation", label: "Site Designation", selected: true, minWidth: "220px", maxLength: 20 },
+    { key: "designation", label: "Designation", selected: true, minWidth: "220px", maxLength: 20 },
+    { key: "head", label: "Head", selected: true, minWidth: "150px", maxLength: 10 },
+    { key: "department", label: "Department", selected: true, minWidth: "220px", maxLength: 20 },
+    { key: "hod", label: "HOD", selected: true, minWidth: "100px", maxLength: 10 },
+    { key: "doj", label: "Date of Joining", selected: true, minWidth: "150px", maxLength: 15 },
+    { key: "visa", label: "Visa", selected: true, minWidth: "150px", maxLength: 10 },
+    { key: "iqamaNo", label: "Iqama No", selected: true, minWidth: "150px", maxLength: 15 },
+    { key: "status", label: "Status", selected: true, minWidth: "100px", maxLength: 10 },
+    { key: "category", label: "Category", selected: true, minWidth: "100px", maxLength: 10 },
+    { key: "payrole", label: "Payrole", selected: true, minWidth: "150px", maxLength: 10 },
+    { key: "sponser", label: "Sponser", selected: true, minWidth: "220px", maxLength: 20 },
+    { key: "project", label: "Project", selected: true, minWidth: "220px", maxLength: 20 },
+    { key: "accommodationStatus", label: "Accommodation Status", selected: true, minWidth: "200px", maxLength: 10 },
   ]);
 
   const observerTargetRef = useRef<HTMLDivElement | null>(null);
@@ -193,11 +192,11 @@ export default function EmployeeDataTable() {
       },
       { threshold: 0.5 }
     );
-  
+
     if (observerTargetRef.current) {
       observer.observe(observerTargetRef.current);
     }
-  
+
     return () => {
       if (observerTargetRef.current) {
         observer.unobserve(observerTargetRef.current);
@@ -279,30 +278,27 @@ export default function EmployeeDataTable() {
               </TableHeader>
               <TableBody>
   {filteredData.map((item, index) => (
-    <TableRow key={item.empNo} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-      {/* Render Serial Number (S.No.) */}
-      {fields.map((field, fieldIndex) => {
-        if (field.key === "serial" && field.selected) {
-          return (
-            <TableCell key={field.key} className="text-left" style={{ minWidth: field.minWidth }}>
-              {index + 1}  {/* Serial number based on the index */}
-            </TableCell>
-          );
-        }
-        if (field.selected && field.key !== "serial") {
+    <TableRow
+      key={item.empNo}
+      className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}
+    >
+      {fields.map((field) => {
+        if (field.selected) {
           return (
             <TableCell
               key={field.key}
               className="text-left"
               style={{ minWidth: field.minWidth }}
             >
-              {item[field.key as keyof Employee] && field.maxLength
+              {field.key === "serial"
+                ? item.serial // Directly render the serial number from the data
+                : item[field.key as keyof Employee] && field.maxLength
                 ? truncateText(item[field.key as keyof Employee], field.maxLength)
                 : item[field.key as keyof Employee]}
             </TableCell>
           );
         }
-        return null;  // Don't render anything if the field is not selected
+        return null; // Don't render anything if the field is not selected
       })}
     </TableRow>
   ))}
