@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Checkbox } from "@/components/ui/checkbox";
@@ -30,7 +29,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-
 type Employee = {
   empNo: string;
   empName: string;
@@ -51,7 +49,7 @@ type Employee = {
 };
 
 type Field = {
-  key: keyof Employee; // Ensure key is a key of Employee type
+  key: keyof Employee | "serial";  // Allow 'serial' for the new column
   label: string;
   selected: boolean;
   colSpan: number;
@@ -68,14 +66,11 @@ interface EmployeeRow {
 // Fetch unique records
 const fetchUniqueRecords = async () => {
   try {
-    // Execute raw SQL queries for distinct records
     const [departmentsResult, positionsResult, locationsResult] = await Promise.all([
       db.execute(sql`SELECT DISTINCT department FROM employee`),
       db.execute(sql`SELECT DISTINCT designation FROM employee`),
       db.execute(sql`SELECT DISTINCT project FROM employee`)
     ]);
-
-    // Safely cast the result rows using a type guard
     const uniqueDepartments: string[] = (departmentsResult.rows as { department: string }[]).map((row) => row.department);
     const uniquePositions: string[] = (positionsResult.rows as { designation: string }[]).map((row) => row.designation);
     const uniqueLocations: string[] = (locationsResult.rows as { project: string }[]).map((row) => row.project);
@@ -96,25 +91,22 @@ const fetchEmployeeData = async ({
   limit: number;
 }): Promise<{ employees: Employee[]; nextCursor: number | null }> => {
   try {
-    // Fetch employees with pagination logic
     const employees = await db
       .select()
       .from(employee)
-      .offset((pageParam - 1) * limit) // Adjust for 1-based pagination
+      .offset((pageParam - 1) * limit)
       .limit(limit)
       .execute();
 
-    // Count query to determine the total number of employees
     const countResult = await db.execute(sql`SELECT COUNT(*) FROM employee`);
     const totalEmployeeCount = Number(countResult.rows[0]?.count) || 0;
 
-    // Calculate the next page cursor based on the total count and current page
     const nextCursor = (pageParam * limit) < totalEmployeeCount ? pageParam + 1 : null;
 
     return {
       employees: employees.map((emp) => ({
         ...emp,
-        doj: emp.doj.toString().split('T')[0], // Format the date of joining
+        doj: emp.doj.toString().split('T')[0],
       })),
       nextCursor,
     };
@@ -132,12 +124,13 @@ export default function EmployeeDataTable() {
   const [selectedPosition, setSelectedPosition] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [fields, setFields] = useState([
+    { key: "serial", label: "S.No.", selected: true, colSpan: 1, minWidth: "50px", maxLength: 3 },
     { key: "empNo", label: "Employee No", selected: true, colSpan: 2, minWidth: "110px", maxLength: 7 },
-    { key: "empName", label: "Employee Name", selected: true, colSpan: 3, minWidth: "220px", maxLength: 20 }, // Truncate empName to 15 chars
+    { key: "empName", label: "Employee Name", selected: true, colSpan: 3, minWidth: "220px", maxLength: 20 },
     { key: "siteDesignation", label: "Site Designation", selected: true, colSpan: 4, minWidth: "220px", maxLength: 20 },
     { key: "designation", label: "Designation", selected: true, colSpan: 2, minWidth: "220px", maxLength: 20 },
     { key: "head", label: "Head", selected: true, colSpan: 2, minWidth: "150px", maxLength: 10 },
-    { key: "department", label: "Department", selected: true, colSpan: 2, minWidth: "220px", maxLength: 20 }, // Truncate department to 10 chars
+    { key: "department", label: "Department", selected: true, colSpan: 2, minWidth: "220px", maxLength: 20 },
     { key: "hod", label: "HOD", selected: true, colSpan: 2, minWidth: "100px", maxLength: 10 },
     { key: "doj", label: "Date of Joining", selected: true, colSpan: 2, minWidth: "150px", maxLength: 15 },
     { key: "visa", label: "Visa", selected: true, colSpan: 2, minWidth: "150px", maxLength: 10 },
@@ -162,20 +155,19 @@ export default function EmployeeDataTable() {
     status,
   } = useInfiniteQuery({
     queryKey: ["employees"],
-    queryFn: ({ pageParam = 1 }) => fetchEmployeeData({ pageParam, limit: 20 }), // Fetches employee data with pageParam
-    initialPageParam: 1, // Starts with page 1
+    queryFn: ({ pageParam = 1 }) => fetchEmployeeData({ pageParam, limit: 20 }),
+    initialPageParam: 1,
     getNextPageParam: (lastPage) => {
-      return lastPage.nextCursor ?? undefined; // If there is no nextCursor, return undefined to indicate no more pages
+      return lastPage.nextCursor ?? undefined;
     },
   });
 
   const employeeData = data?.pages.flatMap((page) => page.employees) || [];
 
-  // Fetch unique departments, positions, and locations once
   const { data: uniqueRecords, isLoading: loadingUniqueRecords, error: uniqueRecordsError } = useQuery({
-    queryKey: ["uniqueRecords"],  // Unique key for the query
-    queryFn: fetchUniqueRecords,  // The function that fetches the unique records
-    staleTime: 5 * 60 * 1000,      // Cache the data for 5 minutes
+    queryKey: ["uniqueRecords"],
+    queryFn: fetchUniqueRecords,
+    staleTime: 5 * 60 * 1000,
   });
 
   const uniqueDepartments = useMemo(() => uniqueRecords?.uniqueDepartments || [], [uniqueRecords]);
@@ -214,10 +206,9 @@ export default function EmployeeDataTable() {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const truncateText = (text: string, maxLength: number) => {
-    if (text.length <= maxLength) return text;  // If the text is short enough, return it as is
-    return text.slice(0, maxLength) + '...';    // Otherwise, slice it and append '...'
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength) + '...';
   };
-  
 
   return (
     <div className="p-4">
@@ -264,42 +255,60 @@ export default function EmployeeDataTable() {
           </SelectContent>
         </Select>
       </div>
-{/* ShadCN UI Card wrapping the table */}
-<div className="w-full overflow-x-scroll">  {/* Ensure this container is scrollable */}
-        <Card className="min-w-[1000px] min-h-[400px] p-6">
-          <div className="w-full overflow-x-scroll">  {/* Make sure the inner container has scroll enabled */}
-            <Table className="min-w-full">
+
+      {/* Card wrapping the table */}
+      <div className="w-full overflow-x-scroll">
+        <Card className="min-w-[1000px] min-h-[500px] p-6">
+          <div className="w-full max-h-[500px] overflow-y-auto">
+            <Table className="min-w-full table-auto">
               <TableHeader>
                 <TableRow>
                   {fields.map((field) => (
                     <TableHead
-                    key={field.key}
-                    className="text-left"
-                    style={{ minWidth: field.minWidth }} // Apply minWidth here directly
-                  >
-                    {field.label}
-                  </TableHead>
+                      key={field.key}
+                      className="text-left sticky top-0 bg-white z-10"
+                      style={{
+                        minWidth: field.minWidth,
+                        zIndex: 10,
+                      }}
+                    >
+                      {field.label}
+                    </TableHead>
                   ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredData.map((item, index) => (
-                  <TableRow key={item.empNo} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                    {fields.map((field) => (
-                      <TableCell
-                      key={field.key}
-                      className="text-left"
-                      style={{ minWidth: field.minWidth }} // Apply minWidth here directly
-                    >
-                      {/* Apply truncation based on maxLength */}
-                      {item[field.key as keyof Employee] && field.maxLength 
-                        ? truncateText(item[field.key as keyof Employee], field.maxLength)
-                        : item[field.key as keyof Employee]} {/* For other fields, display as is */}
-                    </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableBody>
+  {filteredData.map((item, index) => (
+    <TableRow key={item.empNo} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+      {/* Render Serial Number (S.No.) */}
+      {fields.map((field, fieldIndex) => {
+        if (field.key === "serial" && field.selected) {
+          return (
+            <TableCell key={field.key} className="text-left" style={{ minWidth: field.minWidth }}>
+              {index + 1}  {/* Serial number based on the index */}
+            </TableCell>
+          );
+        }
+        if (field.selected && field.key !== "serial") {
+          return (
+            <TableCell
+              key={field.key}
+              className="text-left"
+              style={{ minWidth: field.minWidth }}
+            >
+              {item[field.key as keyof Employee] && field.maxLength
+                ? truncateText(item[field.key as keyof Employee], field.maxLength)
+                : item[field.key as keyof Employee]}
+            </TableCell>
+          );
+        }
+        return null;  // Don't render anything if the field is not selected
+      })}
+    </TableRow>
+  ))}
+</TableBody>
+
+
             </Table>
           </div>
         </Card>
