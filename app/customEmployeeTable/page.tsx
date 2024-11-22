@@ -55,6 +55,8 @@ type Field = {
   label: string;
   selected: boolean;
   colSpan: number;
+  minWidth: string;
+  maxLength: number;
 };
 
 interface EmployeeRow {
@@ -130,22 +132,22 @@ export default function EmployeeDataTable() {
   const [selectedPosition, setSelectedPosition] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [fields, setFields] = useState([
-    { key: "empNo", label: "Employee No", selected: true, colSpan: 2, minWidth: "100px" },
-    { key: "empName", label: "Employee Name", selected: true, colSpan: 3, minWidth: "200px" },
-    { key: "siteDesignation", label: "Site Designation", selected: true, colSpan: 4, minWidth: "150px" },
-    { key: "designation", label: "Designation", selected: true, colSpan: 2, minWidth: "150px" },
-    { key: "head", label: "Head", selected: true, colSpan: 2, minWidth: "150px" },
-    { key: "department", label: "Department", selected: true, colSpan: 2, minWidth: "150px" },
-    { key: "hod", label: "HOD", selected: true, colSpan: 2, minWidth: "150px" },
-    { key: "doj", label: "Date of Joining", selected: true, colSpan: 2, minWidth: "150px" },
-    { key: "visa", label: "Visa", selected: true, colSpan: 2, minWidth: "150px" },
-    { key: "iqamaNo", label: "Iqama No", selected: true, colSpan: 2, minWidth: "150px" },
-    { key: "status", label: "Status", selected: true, colSpan: 1, minWidth: "100px" },
-    { key: "category", label: "Category", selected: true, colSpan: 1, minWidth: "100px" },
-    { key: "payrole", label: "Payrole", selected: true, colSpan: 2, minWidth: "150px" },
-    { key: "sponser", label: "Sponser", selected: true, colSpan: 2, minWidth: "150px" },
-    { key: "project", label: "Project", selected: true, colSpan: 2, minWidth: "150px" },
-    { key: "accommodationStatus", label: "Accommodation Status", selected: true, colSpan: 3, minWidth: "200px" },
+    { key: "empNo", label: "Employee No", selected: true, colSpan: 2, minWidth: "110px", maxLength: 7 },
+    { key: "empName", label: "Employee Name", selected: true, colSpan: 3, minWidth: "220px", maxLength: 20 }, // Truncate empName to 15 chars
+    { key: "siteDesignation", label: "Site Designation", selected: true, colSpan: 4, minWidth: "220px", maxLength: 20 },
+    { key: "designation", label: "Designation", selected: true, colSpan: 2, minWidth: "220px", maxLength: 20 },
+    { key: "head", label: "Head", selected: true, colSpan: 2, minWidth: "150px", maxLength: 10 },
+    { key: "department", label: "Department", selected: true, colSpan: 2, minWidth: "220px", maxLength: 20 }, // Truncate department to 10 chars
+    { key: "hod", label: "HOD", selected: true, colSpan: 2, minWidth: "100px", maxLength: 10 },
+    { key: "doj", label: "Date of Joining", selected: true, colSpan: 2, minWidth: "150px", maxLength: 15 },
+    { key: "visa", label: "Visa", selected: true, colSpan: 2, minWidth: "150px", maxLength: 10 },
+    { key: "iqamaNo", label: "Iqama No", selected: true, colSpan: 2, minWidth: "150px", maxLength: 15 },
+    { key: "status", label: "Status", selected: true, colSpan: 1, minWidth: "100px", maxLength: 10 },
+    { key: "category", label: "Category", selected: true, colSpan: 1, minWidth: "100px", maxLength: 10 },
+    { key: "payrole", label: "Payrole", selected: true, colSpan: 2, minWidth: "150px", maxLength: 10 },
+    { key: "sponser", label: "Sponser", selected: true, colSpan: 2, minWidth: "220px", maxLength: 20 },
+    { key: "project", label: "Project", selected: true, colSpan: 2, minWidth: "220px", maxLength: 20 },
+    { key: "accommodationStatus", label: "Accommodation Status", selected: true, colSpan: 3, minWidth: "200px", maxLength: 10 },
   ]);
 
   const observerTargetRef = useRef<HTMLDivElement | null>(null);
@@ -211,6 +213,12 @@ export default function EmployeeDataTable() {
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  const truncateText = (text: string, maxLength: number) => {
+    if (text.length <= maxLength) return text;  // If the text is short enough, return it as is
+    return text.slice(0, maxLength) + '...';    // Otherwise, slice it and append '...'
+  };
+  
+
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-6">Employee List</h1>
@@ -257,16 +265,20 @@ export default function EmployeeDataTable() {
         </Select>
       </div>
 {/* ShadCN UI Card wrapping the table */}
-<div className="w-full overflow-x-scroll">
+<div className="w-full overflow-x-scroll">  {/* Ensure this container is scrollable */}
         <Card className="min-w-[1000px] min-h-[400px] p-6">
-          <div className="w-full max-w-full">
+          <div className="w-full overflow-x-scroll">  {/* Make sure the inner container has scroll enabled */}
             <Table className="min-w-full">
               <TableHeader>
                 <TableRow>
                   {fields.map((field) => (
-                    <TableHead key={field.key} className={`text-left min-w-[${field.minWidth}]`}>
-                      {field.label}
-                    </TableHead>
+                    <TableHead
+                    key={field.key}
+                    className="text-left"
+                    style={{ minWidth: field.minWidth }} // Apply minWidth here directly
+                  >
+                    {field.label}
+                  </TableHead>
                   ))}
                 </TableRow>
               </TableHeader>
@@ -274,9 +286,16 @@ export default function EmployeeDataTable() {
                 {filteredData.map((item, index) => (
                   <TableRow key={item.empNo} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
                     {fields.map((field) => (
-                      <TableCell key={field.key} className={`text-left min-w-[${field.minWidth}]`}>
-                        {item[field.key as keyof Employee]}
-                      </TableCell>
+                      <TableCell
+                      key={field.key}
+                      className="text-left"
+                      style={{ minWidth: field.minWidth }} // Apply minWidth here directly
+                    >
+                      {/* Apply truncation based on maxLength */}
+                      {item[field.key as keyof Employee] && field.maxLength 
+                        ? truncateText(item[field.key as keyof Employee], field.maxLength)
+                        : item[field.key as keyof Employee]} {/* For other fields, display as is */}
+                    </TableCell>
                     ))}
                   </TableRow>
                 ))}
