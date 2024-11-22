@@ -20,6 +20,16 @@ import {
 } from "@/components/ui/select";
 import { db } from "../configs/db"; // Import your Drizzle database configuration
 import { employee } from "../configs/schema"; // Import the employee table schema
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"; // ShadCN UI Table components
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+
 
 type Employee = {
   empNo: string;
@@ -75,7 +85,6 @@ const fetchUniqueRecords = async () => {
   }
 };
 
-
 // Fetch paginated employee data
 const fetchEmployeeData = async ({
   pageParam = 1,
@@ -121,22 +130,22 @@ export default function EmployeeDataTable() {
   const [selectedPosition, setSelectedPosition] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [fields, setFields] = useState([
-    { key: "empNo", label: "Employee No", selected: true, colSpan: 2 },
-    { key: "empName", label: "Employee Name", selected: true, colSpan: 3 },
-    { key: "siteDesignation", label: "Site Designation", selected: true, colSpan: 4 },
-    { key: "designation", label: "Designation", selected: true, colSpan: 2 },
-    { key: "head", label: "Head", selected: true, colSpan: 2 },
-    { key: "department", label: "Department", selected: true, colSpan: 2 },
-    { key: "hod", label: "HOD", selected: true, colSpan: 2 },
-    { key: "doj", label: "Date of Joining", selected: true, colSpan: 2 },
-    { key: "visa", label: "Visa", selected: true, colSpan: 2 },
-    { key: "iqamaNo", label: "Iqama No", selected: true, colSpan: 2 },
-    { key: "status", label: "Status", selected: true, colSpan: 1 },
-    { key: "category", label: "Category", selected: true, colSpan: 1 },
-    { key: "payrole", label: "Payrole", selected: true, colSpan: 2 },
-    { key: "sponser", label: "Sponser", selected: true, colSpan: 2 },
-    { key: "project", label: "Project", selected: true, colSpan: 2 },
-    { key: "accommodationStatus", label: "Accommodation Status", selected: true, colSpan: 3 },
+    { key: "empNo", label: "Employee No", selected: true, colSpan: 2, minWidth: "100px" },
+    { key: "empName", label: "Employee Name", selected: true, colSpan: 3, minWidth: "200px" },
+    { key: "siteDesignation", label: "Site Designation", selected: true, colSpan: 4, minWidth: "150px" },
+    { key: "designation", label: "Designation", selected: true, colSpan: 2, minWidth: "150px" },
+    { key: "head", label: "Head", selected: true, colSpan: 2, minWidth: "150px" },
+    { key: "department", label: "Department", selected: true, colSpan: 2, minWidth: "150px" },
+    { key: "hod", label: "HOD", selected: true, colSpan: 2, minWidth: "150px" },
+    { key: "doj", label: "Date of Joining", selected: true, colSpan: 2, minWidth: "150px" },
+    { key: "visa", label: "Visa", selected: true, colSpan: 2, minWidth: "150px" },
+    { key: "iqamaNo", label: "Iqama No", selected: true, colSpan: 2, minWidth: "150px" },
+    { key: "status", label: "Status", selected: true, colSpan: 1, minWidth: "100px" },
+    { key: "category", label: "Category", selected: true, colSpan: 1, minWidth: "100px" },
+    { key: "payrole", label: "Payrole", selected: true, colSpan: 2, minWidth: "150px" },
+    { key: "sponser", label: "Sponser", selected: true, colSpan: 2, minWidth: "150px" },
+    { key: "project", label: "Project", selected: true, colSpan: 2, minWidth: "150px" },
+    { key: "accommodationStatus", label: "Accommodation Status", selected: true, colSpan: 3, minWidth: "200px" },
   ]);
 
   const observerTargetRef = useRef<HTMLDivElement | null>(null);
@@ -160,16 +169,16 @@ export default function EmployeeDataTable() {
 
   const employeeData = data?.pages.flatMap((page) => page.employees) || [];
 
- // Fetch unique departments, positions, and locations once
- const { data: uniqueRecords, isLoading: loadingUniqueRecords, error: uniqueRecordsError } = useQuery({
-  queryKey: ["uniqueRecords"],  // Unique key for the query
-  queryFn: fetchUniqueRecords,  // The function that fetches the unique records
-  staleTime: 5 * 60 * 1000,      // Cache the data for 5 minutes
-});
+  // Fetch unique departments, positions, and locations once
+  const { data: uniqueRecords, isLoading: loadingUniqueRecords, error: uniqueRecordsError } = useQuery({
+    queryKey: ["uniqueRecords"],  // Unique key for the query
+    queryFn: fetchUniqueRecords,  // The function that fetches the unique records
+    staleTime: 5 * 60 * 1000,      // Cache the data for 5 minutes
+  });
 
-const uniqueDepartments = useMemo(() => uniqueRecords?.uniqueDepartments || [], [uniqueRecords]);
-const uniquePositions = useMemo(() => uniqueRecords?.uniquePositions || [], [uniqueRecords]);
-const uniqueLocations = useMemo(() => uniqueRecords?.uniqueLocations || [], [uniqueRecords]);
+  const uniqueDepartments = useMemo(() => uniqueRecords?.uniqueDepartments || [], [uniqueRecords]);
+  const uniquePositions = useMemo(() => uniqueRecords?.uniquePositions || [], [uniqueRecords]);
+  const uniqueLocations = useMemo(() => uniqueRecords?.uniqueLocations || [], [uniqueRecords]);
 
   const filteredData = useMemo(() => {
     return employeeData.filter((item) => {
@@ -202,51 +211,12 @@ const uniqueLocations = useMemo(() => uniqueRecords?.uniqueLocations || [], [uni
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const selectedFields = fields.filter((field) => field.selected);
-
-  const getColumnWidth = (key: string): string => {
-    switch (key) {
-      case "empNo":
-        return "w-24";
-      case "empName":
-        return "w-48";
-      case "siteDesignation":
-        return "w-";
-      case "designation":
-        return "w-32";
-      case "head":
-        return "w-32";
-      case "department":
-        return "w-36";
-      case "hod":
-        return "w-32";
-      case "doj":
-        return "w-32";
-      case "visa":
-        return "w-32";
-      case "iqamaNo":
-        return "w-32";
-      case "status":
-        return "w-20";
-      case "category":
-        return "w-24";
-      case "payrole":
-        return "w-32";
-      case "sponser":
-        return "w-32";
-      case "project":
-        return "w-40";
-      case "accommodationStatus":
-        return "w-40";
-      default:
-        return "w-32";
-    }
-  };
-
   return (
     <div className="p-4">
+      <h1 className="text-2xl font-bold mb-6">Employee List</h1>
+
       {/* Filters */}
-      <div className="grid grid-cols-4 gap-4 mb-4 items-center">
+      <div className="flex space-x-4 mb-6">
         <Select onValueChange={setSelectedDepartment} value={selectedDepartment}>
           <SelectTrigger>
             <SelectValue placeholder="All Departments" />
@@ -286,42 +256,34 @@ const uniqueLocations = useMemo(() => uniqueRecords?.uniqueLocations || [], [uni
           </SelectContent>
         </Select>
       </div>
-
-      {/* Employee Table */}
-      <div className="overflow-x-auto">
-        {/* Table Header */}
-        <div className="flex font-semibold text-gray-700 bg-gray-200 border-b pb-2">
-          {selectedFields.map((field) => (
-            <div
-              key={field.key}
-              className={`
-                ${getColumnWidth(field.key)} 
-                flex-shrink-0 
-                flex-grow`}
-            >
-              {field.label}
-            </div>
-          ))}
-        </div>
-
-        {/* Table Body */}
-        <div className="flex flex-col">
-          {filteredData.map((item) => (
-            <div key={item.empNo} className="flex border-b py-2">
-              {selectedFields.map((field) => (
-                <div
-                  key={field.key}
-                  className={`
-                    ${getColumnWidth(field.key)}
-                    flex-shrink-0
-                    flex-grow`}
-                >
-                  {item[field.key as keyof Employee]}
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
+{/* ShadCN UI Card wrapping the table */}
+<div className="w-full overflow-x-scroll">
+        <Card className="min-w-[1000px] min-h-[400px] p-6">
+          <div className="w-full max-w-full">
+            <Table className="min-w-full">
+              <TableHeader>
+                <TableRow>
+                  {fields.map((field) => (
+                    <TableHead key={field.key} className={`text-left min-w-[${field.minWidth}]`}>
+                      {field.label}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredData.map((item, index) => (
+                  <TableRow key={item.empNo} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                    {fields.map((field) => (
+                      <TableCell key={field.key} className={`text-left min-w-[${field.minWidth}]`}>
+                        {item[field.key as keyof Employee]}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
       </div>
 
       {/* Loading More Indicator */}

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 const EmployeeList = () => {
   const employees = [
@@ -46,38 +47,38 @@ const EmployeeList = () => {
     <div className="flex flex-col items-center justify-center h-screen p-4">
       <h1 className="text-2xl font-bold mb-6">Employee List</h1>
       <div className="w-full max-w-6xl overflow-x-auto">
-        <table className="table-auto w-full border-collapse border border-gray-300 text-sm">
-          <thead className="bg-gray-200 font-semibold">
-            <tr>
-              <th className="border border-gray-300 px-4 py-2 text-center w-16">ID</th>
-              <th className="border border-gray-300 px-4 py-2 text-left min-w-[200px]">NAME</th>
-              <th className="border border-gray-300 px-4 py-2 text-left min-w-[150px]">DESIGNATION</th>
-              <th className="border border-gray-300 px-4 py-2 text-left min-w-[150px]">DEPARTMENT</th>
-              <th className="border border-gray-300 px-4 py-2 text-left min-w-[200px]">EMAIL</th>
-              <th className="border border-gray-300 px-4 py-2 text-left min-w-[150px]">LOCATION</th>
-              <th className="border border-gray-300 px-4 py-2 text-left min-w-[150px]">PHONE</th>
-              <th className="border border-gray-300 px-4 py-2 text-left min-w-[150px]">HIRE DATE</th>
-              <th className="border border-gray-300 px-4 py-2 text-left min-w-[100px]">STATUS</th>
-              <th className="border border-gray-300 px-4 py-2 text-right min-w-[150px]">SALARY</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table className="min-w-full">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-center min-w-[50px]">ID</TableHead>
+              <TableHead className="text-left min-w-[200px]">Name</TableHead>
+              <TableHead className="text-left min-w-[150px]">Designation</TableHead>
+              <TableHead className="text-left min-w-[150px]">Department</TableHead>
+              <TableHead className="text-left min-w-[200px]">Email</TableHead>
+              <TableHead className="text-left min-w-[150px]">Location</TableHead>
+              <TableHead className="text-left min-w-[150px]">Phone</TableHead>
+              <TableHead className="text-left min-w-[150px]">Hire Date</TableHead>
+              <TableHead className="text-left min-w-[100px]">Status</TableHead>
+              <TableHead className="text-right min-w-[150px]">Salary</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {employees.map((employee, index) => (
-              <tr key={employee.id} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                <td className="border border-gray-300 px-4 py-2 text-center">{employee.id}</td>
-                <td className="border border-gray-300 px-4 py-2 text-left">{employee.name}</td>
-                <td className="border border-gray-300 px-4 py-2 text-left">{employee.designation}</td>
-                <td className="border border-gray-300 px-4 py-2 text-left">{employee.department}</td>
-                <td className="border border-gray-300 px-4 py-2 text-left truncate">{employee.email}</td>
-                <td className="border border-gray-300 px-4 py-2 text-left">{employee.location}</td>
-                <td className="border border-gray-300 px-4 py-2 text-left">{employee.phone}</td>
-                <td className="border border-gray-300 px-4 py-2 text-left">{employee.hireDate}</td>
-                <td className="border border-gray-300 px-4 py-2 text-left">{employee.status}</td>
-                <td className="border border-gray-300 px-4 py-2 text-right">{employee.salary}</td>
-              </tr>
+              <TableRow key={employee.id} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                <TableCell className="text-center">{employee.id}</TableCell>
+                <TableCell>{employee.name}</TableCell>
+                <TableCell>{employee.designation}</TableCell>
+                <TableCell>{employee.department}</TableCell>
+                <TableCell className="truncate">{employee.email}</TableCell>
+                <TableCell>{employee.location}</TableCell>
+                <TableCell>{employee.phone}</TableCell>
+                <TableCell>{employee.hireDate}</TableCell>
+                <TableCell>{employee.status}</TableCell>
+                <TableCell className="text-right">{employee.salary}</TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
