@@ -53,6 +53,10 @@ const data = {
           title: "Employee Detail",
           url: "/customEmployeeTable",
         },
+        {
+          title: "RND WORD",
+          url: "/RndComponent",
+        },
       ],
     },
 
