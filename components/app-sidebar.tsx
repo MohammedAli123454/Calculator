@@ -57,6 +57,10 @@ const data = {
           title: "RND WORD",
           url: "/RndComponent",
         },
+        {
+          title: "RND Table",
+          url: "/RND",
+        },
       ],
     },
 

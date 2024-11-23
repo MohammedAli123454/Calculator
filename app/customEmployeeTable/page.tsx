@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Checkbox } from "@/components/ui/checkbox";
 import { sql } from "drizzle-orm";
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -124,7 +125,7 @@ export default function EmployeeDataTable() {
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [fields, setFields] = useState([
     { key: "serial", label: "S.No.", selected: true, minWidth: "50px", maxLength: 3 },
-    { key: "empNo", label: "Employee No", selected: true, minWidth: "110px", maxLength: 7 },
+    { key: "empNo", label: "Employee No", selected: true, minWidth: "120px", maxLength: 7 },
     { key: "empName", label: "Employee Name", selected: true, minWidth: "220px", maxLength: 20 },
     { key: "siteDesignation", label: "Site Designation", selected: true, minWidth: "220px", maxLength: 20 },
     { key: "designation", label: "Designation", selected: true, minWidth: "220px", maxLength: 20 },
@@ -211,101 +212,114 @@ export default function EmployeeDataTable() {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-6">Employee List</h1>
+      {/* <h1 className="text-2xl font-bold mb-6">Employee List</h1> */}
+{/* Filters */}
+<div className="grid grid-cols-3 gap-4 mb-6">
+  {/* Department Filter */}
+  <div className="flex flex-col">
+    <Label htmlFor="department" className="text-md font-medium text-gray-600">
+      Department
+    </Label>
+    <Select onValueChange={setSelectedDepartment} value={selectedDepartment}>
+      <SelectTrigger>
+        <SelectValue placeholder="All Departments" />
+      </SelectTrigger>
+      <SelectContent>
+        {["all", ...uniqueDepartments].map((department) => (
+          <SelectItem key={department} value={department}>
+            {department}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </div>
 
-      {/* Filters */}
-      <div className="flex space-x-4 mb-6">
-        <Select onValueChange={setSelectedDepartment} value={selectedDepartment}>
-          <SelectTrigger>
-            <SelectValue placeholder="All Departments" />
-          </SelectTrigger>
-          <SelectContent>
-            {["all", ...uniqueDepartments].map((department) => (
-              <SelectItem key={department} value={department}>
-                {department}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+  {/* Position Filter */}
+  <div className="flex flex-col">
+    <Label htmlFor="position" className="text-md font-medium text-gray-600">
+      Position
+    </Label>
+    <Select onValueChange={setSelectedPosition} value={selectedPosition}>
+      <SelectTrigger>
+        <SelectValue placeholder="All Positions" />
+      </SelectTrigger>
+      <SelectContent>
+        {["all", ...uniquePositions].map((position) => (
+          <SelectItem key={position} value={position}>
+            {position}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </div>
 
-        <Select onValueChange={setSelectedPosition} value={selectedPosition}>
-          <SelectTrigger>
-            <SelectValue placeholder="All Positions" />
-          </SelectTrigger>
-          <SelectContent>
-            {["all", ...uniquePositions].map((position) => (
-              <SelectItem key={position} value={position}>
-                {position}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+  {/* Location Filter */}
+  <div className="flex flex-col">
+    <Label htmlFor="location" className="text-md font-medium text-gray-600">
+      Location
+    </Label>
+    <Select onValueChange={setSelectedLocation} value={selectedLocation}>
+      <SelectTrigger>
+        <SelectValue placeholder="All Locations" />
+      </SelectTrigger>
+      <SelectContent>
+        {["all", ...uniqueLocations].map((location) => (
+          <SelectItem key={location} value={location}>
+            {location}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </div>
+</div>
 
-        <Select onValueChange={setSelectedLocation} value={selectedLocation}>
-          <SelectTrigger>
-            <SelectValue placeholder="All Locations" />
-          </SelectTrigger>
-          <SelectContent>
-            {["all", ...uniqueLocations].map((location) => (
-              <SelectItem key={location} value={location}>
-                {location}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
 
       {/* Card wrapping the table */}
       <div className="w-full overflow-x-scroll">
-        <Card className="min-w-[1000px] min-h-[500px] p-6">
-          <div className="w-full max-h-[500px] overflow-y-auto">
-            <Table className="min-w-full table-auto">
-              <TableHeader>
-                <TableRow>
+        <Card className="min-w-[1000px] min-h-[500px] p-4">
+          <div className="max-h-[550px] overflow-y-auto relative">
+            <table className="w-full border-collapse">
+              <thead className="sticky top-0 bg-white shadow-md z-10">
+                <tr>
                   {fields.map((field) => (
-                    <TableHead
+                    <th
                       key={field.key}
-                      className="text-left sticky top-0 bg-white z-10"
-                      style={{
-                        minWidth: field.minWidth,
-                        zIndex: 10,
-                      }}
+                      className="px-1 py-1 font-normal text-left capitalize"  // Removed 'uppercase'
+                      style={{ minWidth: field.minWidth }}
                     >
                       {field.label}
-                    </TableHead>
+                    </th>
                   ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-  {filteredData.map((item, index) => (
-    <TableRow
-      key={item.empNo}
-      className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}
-    >
-      {fields.map((field) => {
-        if (field.selected) {
-          return (
-            <TableCell
-              key={field.key}
-              className="text-left"
-              style={{ minWidth: field.minWidth }}
-            >
-              {field.key === "serial"
-                ? item.serial // Directly render the serial number from the data
-                : item[field.key as keyof Employee] && field.maxLength
-                ? truncateText(item[field.key as keyof Employee], field.maxLength)
-                : item[field.key as keyof Employee]}
-            </TableCell>
-          );
-        }
-        return null; // Don't render anything if the field is not selected
-      })}
-    </TableRow>
-  ))}
-</TableBody>
-
-
-            </Table>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredData.map((item, index) => (
+                  <tr
+                    key={item.empNo}
+                    className={index % 2 === 0 ? "bg-gray-100" : "bg-white"} 
+                  >
+                    {fields.map((field) => {
+                      if (field.selected) {
+                        return (
+                          <td
+                            key={field.key}
+                            className="px-2 py-1 text-left text-sm capitalize"  // Added 'capitalize' class
+                            style={{ minWidth: field.minWidth }}
+                          >
+                            {field.key === "serial"
+                              ? item.serial // Directly render the serial number from the data
+                              : item[field.key as keyof Employee] && field.maxLength
+                              ? truncateText(item[field.key as keyof Employee], field.maxLength)
+                              : item[field.key as keyof Employee]}
+                          </td>
+                        );
+                      }
+                      return null; // Don't render anything if the field is not selected
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </Card>
       </div>
