@@ -143,6 +143,7 @@ export default function EmployeeDataTable() {
     { key: "accommodationStatus", label: "Accommodation Status", selected: true, minWidth: "200px", maxLength: 10 },
   ]);
 
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null); // State to hold the selected employee
   const observerTargetRef = useRef<HTMLDivElement | null>(null);
 
   const {
@@ -214,7 +215,7 @@ export default function EmployeeDataTable() {
     <div className="p-4">
       {/* <h1 className="text-2xl font-bold mb-6">Employee List</h1> */}
 {/* Filters */}
-<div className="grid grid-cols-3 gap-4 mb-6">
+<div className="grid grid-cols-3 gap-4 mb-2">
   {/* Department Filter */}
   <div className="flex flex-col">
     <Label htmlFor="department" className="text-md font-medium text-gray-600">
@@ -297,6 +298,7 @@ export default function EmployeeDataTable() {
                   <tr
                     key={item.empNo}
                     className={index % 2 === 0 ? "bg-gray-100" : "bg-white"} 
+                    onClick={() => setSelectedEmployee(item)} // Set selected employee on row click
                   >
                     {fields.map((field) => {
                       if (field.selected) {
@@ -323,6 +325,52 @@ export default function EmployeeDataTable() {
           </div>
         </Card>
       </div>
+
+      {selectedEmployee && (
+  <Dialog open={!!selectedEmployee} onOpenChange={(open) => !open && setSelectedEmployee(null)}>
+    <DialogContent className="max-w-4xl w-full">
+      <DialogHeader>
+        <DialogTitle>Employee Details</DialogTitle>
+      </DialogHeader>
+      
+      <div className="grid grid-cols-5 gap-4">
+        <Label htmlFor="empNo" className="col-span-1 text-md font-medium text-gray-600">Employee No:</Label>
+        <div className="col-span-4">{selectedEmployee.empNo}</div>
+
+        <Label htmlFor="empName" className="col-span-1 text-md font-medium text-gray-600">Name:</Label>
+        <div className="col-span-4">{selectedEmployee.empName}</div>
+
+        <Label htmlFor="designation" className="col-span-1 text-md font-medium text-gray-600">Designation:</Label>
+        <div className="col-span-4">{selectedEmployee.designation}</div>
+
+        <Label htmlFor="department" className="col-span-1 text-md font-medium text-gray-600">Department:</Label>
+        <div className="col-span-4">{selectedEmployee.department}</div>
+
+        <Label htmlFor="head" className="col-span-1 text-md font-medium text-gray-600">Head:</Label>
+        <div className="col-span-4">{selectedEmployee.head}</div>
+
+        <Label htmlFor="hod" className="col-span-1 text-md font-medium text-gray-600">HOD:</Label>
+        <div className="col-span-4">{selectedEmployee.hod}</div>
+
+        <Label htmlFor="doj" className="col-span-1 text-md font-medium text-gray-600">Date of Joining:</Label>
+        <div className="col-span-4">{selectedEmployee.doj}</div>
+
+        <Label htmlFor="status" className="col-span-1 text-md font-medium text-gray-600">Status:</Label>
+        <div className="col-span-4">{selectedEmployee.status}</div>
+
+        <Label htmlFor="visa" className="col-span-1 text-md font-medium text-gray-600">Visa:</Label>
+        <div className="col-span-4">{selectedEmployee.visa}</div>
+
+        <Label htmlFor="project" className="col-span-1 text-md font-medium text-gray-600">Project:</Label>
+        <div className="col-span-4">{selectedEmployee.project}</div>
+      </div>
+    </DialogContent>
+  </Dialog>
+)}
+
+
+
+
 
       {/* Loading More Indicator */}
       <div ref={observerTargetRef} />
