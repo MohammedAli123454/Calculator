@@ -58,7 +58,6 @@ type Field = {
   maxLength: number;
 };
 
-
 // Fetch unique records
 const fetchUniqueRecords = async () => {
   try {
@@ -123,6 +122,7 @@ export default function EmployeeDataTable() {
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [selectedPosition, setSelectedPosition] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
+  const [searchQuery, setSearchQuery] = useState(""); // State to hold the search query
   const [fields, setFields] = useState([
     { key: "serial", label: "S.No.", selected: true, minWidth: "50px", maxLength: 3 },
     { key: "empNo", label: "Employee No", selected: true, minWidth: "120px", maxLength: 7 },
@@ -175,15 +175,25 @@ export default function EmployeeDataTable() {
   const uniquePositions = useMemo(() => uniqueRecords?.uniquePositions || [], [uniqueRecords]);
   const uniqueLocations = useMemo(() => uniqueRecords?.uniqueLocations || [], [uniqueRecords]);
 
+  // Filter data based on department, position, location, and search query
   const filteredData = useMemo(() => {
-    return employeeData.filter((item) => {
+    const filtered = employeeData.filter((item) => {
+      const matchesSearchQuery = item.empNo.toLowerCase().includes(searchQuery.toLowerCase()) || item.empName.toLowerCase().includes(searchQuery.toLowerCase());
       return (
+        matchesSearchQuery &&
         (selectedDepartment !== "all" ? item.department === selectedDepartment : true) &&
         (selectedPosition !== "all" ? item.designation === selectedPosition : true) &&
         (selectedLocation !== "all" ? item.project === selectedLocation : true)
       );
     });
-  }, [employeeData, selectedDepartment, selectedPosition, selectedLocation]);
+  
+    // Assign serial numbers based on filtered data
+    return filtered.map((item, index) => ({
+      ...item,
+      serial: index + 1, // Serial number based on its index in the filtered data
+      doj: item.doj.toString().split("T")[0], // Format date
+    }));
+  }, [employeeData, selectedDepartment, selectedPosition, selectedLocation, searchQuery]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -213,67 +223,76 @@ export default function EmployeeDataTable() {
 
   return (
     <div className="p-4">
-      {/* <h1 className="text-2xl font-bold mb-6">Employee List</h1> */}
-{/* Filters */}
-<div className="grid grid-cols-3 gap-4 mb-2">
-  {/* Department Filter */}
-  <div className="flex flex-col">
-    <Label htmlFor="department" className="text-md font-medium text-gray-600">
-      Department
-    </Label>
-    <Select onValueChange={setSelectedDepartment} value={selectedDepartment}>
-      <SelectTrigger>
-        <SelectValue placeholder="All Departments" />
-      </SelectTrigger>
-      <SelectContent>
-        {["all", ...uniqueDepartments].map((department) => (
-          <SelectItem key={department} value={department}>
-            {department}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  </div>
+      {/* Search Input */}
+      <div className="mb-4">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search by Employee No or Name"
+          className="w-full p-2 border rounded-md"
+        />
+      </div>
 
-  {/* Position Filter */}
-  <div className="flex flex-col">
-    <Label htmlFor="position" className="text-md font-medium text-gray-600">
-      Position
-    </Label>
-    <Select onValueChange={setSelectedPosition} value={selectedPosition}>
-      <SelectTrigger>
-        <SelectValue placeholder="All Positions" />
-      </SelectTrigger>
-      <SelectContent>
-        {["all", ...uniquePositions].map((position) => (
-          <SelectItem key={position} value={position}>
-            {position}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  </div>
+      {/* Filters */}
+      <div className="grid grid-cols-3 gap-4 mb-2">
+        {/* Department Filter */}
+        <div className="flex flex-col">
+          <Label htmlFor="department" className="text-md font-medium text-gray-600">
+            Department
+          </Label>
+          <Select onValueChange={setSelectedDepartment} value={selectedDepartment}>
+            <SelectTrigger>
+              <SelectValue placeholder="All Departments" />
+            </SelectTrigger>
+            <SelectContent>
+              {["all", ...uniqueDepartments].map((department) => (
+                <SelectItem key={department} value={department}>
+                  {department}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-  {/* Location Filter */}
-  <div className="flex flex-col">
-    <Label htmlFor="location" className="text-md font-medium text-gray-600">
-      Location
-    </Label>
-    <Select onValueChange={setSelectedLocation} value={selectedLocation}>
-      <SelectTrigger>
-        <SelectValue placeholder="All Locations" />
-      </SelectTrigger>
-      <SelectContent>
-        {["all", ...uniqueLocations].map((location) => (
-          <SelectItem key={location} value={location}>
-            {location}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  </div>
-</div>
+        {/* Position Filter */}
+        <div className="flex flex-col">
+          <Label htmlFor="position" className="text-md font-medium text-gray-600">
+            Position
+          </Label>
+          <Select onValueChange={setSelectedPosition} value={selectedPosition}>
+            <SelectTrigger>
+              <SelectValue placeholder="All Positions" />
+            </SelectTrigger>
+            <SelectContent>
+              {["all", ...uniquePositions].map((position) => (
+                <SelectItem key={position} value={position}>
+                  {position}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
+        {/* Location Filter */}
+        <div className="flex flex-col">
+          <Label htmlFor="location" className="text-md font-medium text-gray-600">
+            Location
+          </Label>
+          <Select onValueChange={setSelectedLocation} value={selectedLocation}>
+            <SelectTrigger>
+              <SelectValue placeholder="All Locations" />
+            </SelectTrigger>
+            <SelectContent>
+              {["all", ...uniqueLocations].map((location) => (
+                <SelectItem key={location} value={location}>
+                  {location}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
       {/* Card wrapping the table */}
       <div className="w-full overflow-x-scroll">
@@ -305,7 +324,7 @@ export default function EmployeeDataTable() {
                         return (
                           <td
                             key={field.key}
-                            className="px-2 py-1 text-left text-sm capitalize"  // Added 'capitalize' class
+                            className="px-2 py-2 text-left text-sm capitalize"  // Added 'capitalize' class
                             style={{ minWidth: field.minWidth }}
                           >
                             {field.key === "serial"
@@ -327,50 +346,46 @@ export default function EmployeeDataTable() {
       </div>
 
       {selectedEmployee && (
-  <Dialog open={!!selectedEmployee} onOpenChange={(open) => !open && setSelectedEmployee(null)}>
-    <DialogContent className="max-w-4xl w-full">
-      <DialogHeader>
-        <DialogTitle>Employee Details</DialogTitle>
-      </DialogHeader>
-      
-      <div className="grid grid-cols-5 gap-4">
-        <Label htmlFor="empNo" className="col-span-1 text-md font-medium text-gray-600">Employee No:</Label>
-        <div className="col-span-4">{selectedEmployee.empNo}</div>
+        <Dialog open={!!selectedEmployee} onOpenChange={(open) => !open && setSelectedEmployee(null)}>
+          <DialogContent className="max-w-4xl w-full">
+            <DialogHeader>
+              <DialogTitle>Employee Details</DialogTitle>
+            </DialogHeader>
 
-        <Label htmlFor="empName" className="col-span-1 text-md font-medium text-gray-600">Name:</Label>
-        <div className="col-span-4">{selectedEmployee.empName}</div>
+            <div className="grid grid-cols-5 gap-4">
+              <Label htmlFor="empNo" className="col-span-1 text-md font-medium text-gray-600">Employee No:</Label>
+              <div className="col-span-4">{selectedEmployee.empNo}</div>
 
-        <Label htmlFor="designation" className="col-span-1 text-md font-medium text-gray-600">Designation:</Label>
-        <div className="col-span-4">{selectedEmployee.designation}</div>
+              <Label htmlFor="empName" className="col-span-1 text-md font-medium text-gray-600">Name:</Label>
+              <div className="col-span-4">{selectedEmployee.empName}</div>
 
-        <Label htmlFor="department" className="col-span-1 text-md font-medium text-gray-600">Department:</Label>
-        <div className="col-span-4">{selectedEmployee.department}</div>
+              <Label htmlFor="designation" className="col-span-1 text-md font-medium text-gray-600">Designation:</Label>
+              <div className="col-span-4">{selectedEmployee.designation}</div>
 
-        <Label htmlFor="head" className="col-span-1 text-md font-medium text-gray-600">Head:</Label>
-        <div className="col-span-4">{selectedEmployee.head}</div>
+              <Label htmlFor="department" className="col-span-1 text-md font-medium text-gray-600">Department:</Label>
+              <div className="col-span-4">{selectedEmployee.department}</div>
 
-        <Label htmlFor="hod" className="col-span-1 text-md font-medium text-gray-600">HOD:</Label>
-        <div className="col-span-4">{selectedEmployee.hod}</div>
+              <Label htmlFor="head" className="col-span-1 text-md font-medium text-gray-600">Head:</Label>
+              <div className="col-span-4">{selectedEmployee.head}</div>
 
-        <Label htmlFor="doj" className="col-span-1 text-md font-medium text-gray-600">Date of Joining:</Label>
-        <div className="col-span-4">{selectedEmployee.doj}</div>
+              <Label htmlFor="hod" className="col-span-1 text-md font-medium text-gray-600">HOD:</Label>
+              <div className="col-span-4">{selectedEmployee.hod}</div>
 
-        <Label htmlFor="status" className="col-span-1 text-md font-medium text-gray-600">Status:</Label>
-        <div className="col-span-4">{selectedEmployee.status}</div>
+              <Label htmlFor="doj" className="col-span-1 text-md font-medium text-gray-600">Date of Joining:</Label>
+              <div className="col-span-4">{selectedEmployee.doj}</div>
 
-        <Label htmlFor="visa" className="col-span-1 text-md font-medium text-gray-600">Visa:</Label>
-        <div className="col-span-4">{selectedEmployee.visa}</div>
+              <Label htmlFor="status" className="col-span-1 text-md font-medium text-gray-600">Status:</Label>
+              <div className="col-span-4">{selectedEmployee.status}</div>
 
-        <Label htmlFor="project" className="col-span-1 text-md font-medium text-gray-600">Project:</Label>
-        <div className="col-span-4">{selectedEmployee.project}</div>
-      </div>
-    </DialogContent>
-  </Dialog>
-)}
+              <Label htmlFor="visa" className="col-span-1 text-md font-medium text-gray-600">Visa:</Label>
+              <div className="col-span-4">{selectedEmployee.visa}</div>
 
-
-
-
+              <Label htmlFor="project" className="col-span-1 text-md font-medium text-gray-600">Project:</Label>
+              <div className="col-span-4">{selectedEmployee.project}</div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Loading More Indicator */}
       <div ref={observerTargetRef} />
