@@ -21,3 +21,10 @@ export const employee = pgTable("employee", {
     project: varchar("project").notNull(),
     accommodationStatus: varchar("accommodation_status").notNull(),
   });
+
+  export const salesData = pgTable("sales_data", {
+    id: serial("id").primaryKey(), // Auto-incrementing primary key
+    date: date("date").notNull(), // Date of the sale
+    category: varchar("category").notNull(), // Category of the sale
+    sales: integer("sales").notNull(), // Sales amount
+  });

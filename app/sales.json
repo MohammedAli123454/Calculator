@@ -1,0 +1,27 @@
+[
+    { "Date": "2024-01-05", "Category": "Electronics", "Sales": 1500 },
+    { "Date": "2024-01-15", "Category": "Clothing", "Sales": 750 },
+    { "Date": "2024-02-10", "Category": "Home Appliances", "Sales": 2200 },
+    { "Date": "2024-02-20", "Category": "Electronics", "Sales": 1800 },
+    { "Date": "2024-03-12", "Category": "Furniture", "Sales": 3000 },
+    { "Date": "2024-03-25", "Category": "Books", "Sales": 600 },
+    { "Date": "2024-04-05", "Category": "Clothing", "Sales": 950 },
+    { "Date": "2024-04-18", "Category": "Electronics", "Sales": 2500 },
+    { "Date": "2024-05-09", "Category": "Sports", "Sales": 1300 },
+    { "Date": "2024-05-22", "Category": "Home Appliances", "Sales": 1900 },
+    { "Date": "2024-06-14", "Category": "Books", "Sales": 800 },
+    { "Date": "2024-06-27", "Category": "Furniture", "Sales": 2700 },
+    { "Date": "2024-07-04", "Category": "Electronics", "Sales": 3200 },
+    { "Date": "2024-07-19", "Category": "Clothing", "Sales": 1100 },
+    { "Date": "2024-08-11", "Category": "Home Appliances", "Sales": 2400 },
+    { "Date": "2024-08-29", "Category": "Sports", "Sales": 1400 },
+    { "Date": "2024-09-06", "Category": "Furniture", "Sales": 3100 },
+    { "Date": "2024-09-22", "Category": "Books", "Sales": 900 },
+    { "Date": "2024-10-10", "Category": "Electronics", "Sales": 4000 },
+    { "Date": "2024-10-25", "Category": "Clothing", "Sales": 1250 },
+    { "Date": "2024-11-08", "Category": "Home Appliances", "Sales": 2600 },
+    { "Date": "2024-11-20", "Category": "Sports", "Sales": 1500 },
+    { "Date": "2024-12-05", "Category": "Furniture", "Sales": 3500 },
+    { "Date": "2024-12-18", "Category": "Books", "Sales": 700 }
+  ]
+  

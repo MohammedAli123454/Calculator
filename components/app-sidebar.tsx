@@ -65,6 +65,14 @@ const data = {
           title: "NON Destrictive Tests",
           url: "/NDTTests",
         },
+        {
+          title: "Push Sales Data",
+          url: "/PushSalesData",
+        },
+        {
+          title: "Pivotal Table",
+          url: "/PivotalTable",
+        },
       ],
     },
 
