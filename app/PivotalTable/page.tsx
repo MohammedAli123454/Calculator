@@ -37,7 +37,7 @@ interface GroupedSalesData {
       const groupedData = (result.rows as { month: string; category: string; total_sales: number }[]).map(row => ({
         month: row.month,
         category: row.category,
-        total_sales: row.total_sales,
+        total_sales: Number(row.total_sales),
       }));
   
       return groupedData;
@@ -83,28 +83,27 @@ interface GroupedSalesData {
     // Calculate total sales for a specific category
     const calculateCategoryTotal = (category: string) => {
       let categoryTotal = 0;
-      // Sum up the sales for the given category across all months
       uniqueMonths.forEach((month) => {
         const sales = groupedData.find(
           (item) => item.category === category && item.month.trim() === month
         );
         if (sales) {
-          categoryTotal += sales.total_sales; // Make sure sales are treated as numbers
+          categoryTotal += Number(sales.total_sales); // Ensure number addition
         }
       });
       return categoryTotal;
     };
+    
   
     // Calculate total sales for a specific month
     const calculateMonthTotal = (month: string) => {
       let monthTotal = 0;
-      // Sum up the sales for the given month across all categories
       uniqueCategories.forEach((category) => {
         const sales = groupedData.find(
           (item) => item.category === category && item.month.trim() === month
         );
         if (sales) {
-          monthTotal += sales.total_sales; // Ensure it's treated as a number
+          monthTotal += Number(sales.total_sales); // Ensure number addition
         }
       });
       return monthTotal;
@@ -114,10 +113,11 @@ interface GroupedSalesData {
     const calculateGrandTotal = () => {
       let grandTotal = 0;
       groupedData.forEach((item) => {
-        grandTotal += item.total_sales; // Ensure we're adding the sales as numbers
+        grandTotal += Number(item.total_sales); // Ensure number addition
       });
       return grandTotal;
     };
+    
   
     return (
       <div className="p-4">
