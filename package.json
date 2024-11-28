@@ -42,6 +42,7 @@
     "react-infinite-scroll-component": "^6.1.0",
     "react-multi-select-component": "^4.3.4",
     "react-select": "^5.8.3",
+    "recharts": "^2.13.3",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.0.3",
