@@ -4,19 +4,7 @@ import React, { useEffect, useState } from "react";
 import { sql } from "drizzle-orm";
 import { db } from "../configs/db"; // Import your Drizzle database configuration
 import { salesData } from "../configs/schema"; // Import the salesData schema
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer"
-import { Label } from "@/components/ui/label"; // Import ShadCN Label component
-import { DialogTitle } from "@radix-ui/react-dialog"; // Import DialogTitle from Radix UI
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden"; // For hiding the title visually if needed
+import { MultiSelect } from "react-multi-select-component";
 
 // Define the type for the grouped sales data
 interface GroupedSalesData {
@@ -29,7 +17,7 @@ interface GroupedSalesData {
 const getMonthName = (month: string) => {
   const monthIndex = parseInt(month.split("-")[1], 10) - 1; // Extract month index
   const monthNames = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
   ];
   return monthNames[monthIndex];
@@ -66,8 +54,9 @@ const SalesTable = () => {
   const [uniqueMonths, setUniqueMonths] = useState<string[]>([]);
   const [uniqueCategories, setUniqueCategories] = useState<string[]>([]);
   const [isPivotalView, setIsPivotalView] = useState(true);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<
+    { label: string; value: string }[]
+  >([{ label: "All", value: "All" }]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -79,7 +68,6 @@ const SalesTable = () => {
         setUniqueMonths(months);
         setUniqueCategories(categories);
         setGroupedData(data);
-        setSelectedCategories(categories); // Initially, select all categories
       } catch (error) {
         console.error("Error fetching sales data:", error);
       }
@@ -88,9 +76,12 @@ const SalesTable = () => {
     fetchData();
   }, []);
 
-  const filteredData = groupedData.filter((item) =>
-    selectedCategories.includes(item.category)
-  );
+  const filteredData =
+    selectedCategories.some((item) => item.value === "All")
+      ? groupedData
+      : groupedData.filter((item) =>
+          selectedCategories.some((category) => category.value === item.category)
+        );
 
   const formatNumber = (num: number) => num.toLocaleString();
 
@@ -116,20 +107,40 @@ const SalesTable = () => {
     return filteredData.reduce((total, item) => total + item.total_sales, 0);
   };
 
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((cat) => cat !== category)
-        : [...prev, category]
-    );
-  };
+  // Options for the Multi-Select component
+  const categoryOptions = [
+    { label: "All", value: "All" },
+    ...uniqueCategories.map((category) => ({
+      label: category,
+      value: category,
+    })),
+  ];
 
-  const selectAllCategories = () => setSelectedCategories(uniqueCategories);
-  const deselectAllCategories = () => setSelectedCategories([]);
+  const handleCategoryChange = (selectedOptions: any) => {
+    if (selectedOptions.some((option: any) => option.value === "All")) {
+      setSelectedCategories([{ label: "All", value: "All" }]);
+    } else {
+      setSelectedCategories(selectedOptions);
+    }
+  };
 
   return (
     <div className="p-4">
       <h2 className="text-xl font-bold mb-4">Sales Data</h2>
+
+      {/* Category Selector */}
+      <div className="mb-4 flex items-center space-x-4">
+        <label htmlFor="category-select" className="font-bold">
+          Filter by Category:
+        </label>
+        <MultiSelect
+          options={categoryOptions}
+          value={selectedCategories}
+          onChange={handleCategoryChange}
+          labelledBy="Select Categories"
+          className="w-80"
+        />
+      </div>
 
       {/* Buttons to toggle between views */}
       <div className="mb-4">
@@ -164,7 +175,9 @@ const SalesTable = () => {
             </thead>
             <tbody>
               {uniqueCategories
-                .filter((category) => selectedCategories.includes(category))
+                .filter((category) =>
+                  selectedCategories.some((item) => item.value === "All" || item.value === category)
+                )
                 .map((category) => (
                   <tr key={category}>
                     <td className="border border-gray-300 px-4 py-2">{category}</td>
@@ -230,71 +243,18 @@ const SalesTable = () => {
                   </td>
                 </tr>
               ))}
+              <tr className="bg-gray-100">
+                <td
+                  colSpan={3}
+                  className="border border-gray-300 px-4 py-2 text-center font-bold"
+                >
+                  Grand Total: {formatNumber(calculateGrandTotal())}
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
       )}
-
-  {/* Drawer for Category Filters */}
-<Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-  <DrawerTrigger asChild>
-    <button className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 mt-4">
-      Filter Categories
-    </button>
-  </DrawerTrigger>
-
-  <DrawerContent>
-    {/* Drawer Header with Title and Description for Accessibility */}
-    <div className="p-4">
-      <DrawerHeader>
-        <DrawerTitle id="drawer-title">Filter by Category</DrawerTitle>
-        <DrawerDescription id="drawer-description">
-          Select categories to filter the sales data.
-        </DrawerDescription>
-      </DrawerHeader>
-
-      <div className="flex flex-col items-center space-y-4">
-        <button
-          onClick={selectAllCategories}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Select All
-        </button>
-        <button
-          onClick={deselectAllCategories}
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-        >
-          Deselect All
-        </button>
-      </div>
-
-      <div className="mt-6 flex items-center space-x-4 space-y-3">
-        {uniqueCategories.map((category) => (
-          <div key={category} className="flex items-center">
-            <input
-              type="checkbox"
-              className="mr-3"
-              checked={selectedCategories.includes(category)}
-              onChange={() => handleCategoryChange(category)}
-            />
-            <Label className="font-bold">{category}</Label>
-          </div>
-        ))}
-      </div>
-    </div>
-
-    <DrawerFooter>
-      <DrawerClose asChild>
-        <button className="absolute top-2 right-2 p-2 text-gray-500 hover:text-gray-800">
-          Close
-        </button>
-      </DrawerClose>
-    </DrawerFooter>
-  </DrawerContent>
-</Drawer>
-
-
-
     </div>
   );
 };
