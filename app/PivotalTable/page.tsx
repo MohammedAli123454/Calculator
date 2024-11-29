@@ -91,7 +91,7 @@ const SalesTable = () => {
         selectedCategories.some((category) => category.value === item.category)
       );
 
-  // Chart data transformation
+  // Chart data for "Chart by Month"
   const chartData = uniqueMonths.map((month) => {
     const monthData: Record<string, number | string> = { month: getMonthName(month) };
     filteredData.forEach((item) => {
@@ -102,21 +102,34 @@ const SalesTable = () => {
     return monthData;
   });
 
-  const chartDataByCategory = uniqueCategories.map((category) => {
-    const categoryData: Record<string, number | string> = { category };
-    uniqueMonths.forEach((month) => {
-      const sales = filteredData.find((item) => item.category === category && item.month === month);
-      categoryData[month] = sales ? sales.total_sales : 0;
-    });
-    return categoryData;
-  });
+  // Chart data for "Chart by Category"
+ // Create chart data for Chart by Category: one bar per category showing total sales
+const chartDataByCategory = uniqueCategories.map((category) => {
+  // Calculate the total sales for each category across all months
+  const totalSales = filteredData
+    .filter((item) => item.category === category)
+    .reduce((sum, item) => sum + item.total_sales, 0);
 
-  // Chart configuration for ShadCN
-  const chartConfig = uniqueCategories.reduce((acc, category, index) => {
-    const colors = ["#2563eb", "#60a5fa", "#34d399", "#f87171", "#facc15"];
-    acc[category] = { label: category, color: colors[index % colors.length] };
-    return acc;
-  }, {} as ChartConfig);
+  return {
+    category, // Label for the X-axis
+    total_sales: totalSales, // Value for the bar
+  };
+});
+  
+
+ // Chart configuration for "Chart by Month" view with colors for each month
+const monthChartConfig = uniqueMonths.reduce((acc, month, index) => {
+  const colors = ["#2563eb", "#60a5fa", "#34d399", "#f87171", "#facc15", "#ef4444", "#9333ea", "#f59e0b", "#6d28d9", "#10b981"];
+  acc[month] = { label: getMonthName(month), color: colors[index % colors.length] };
+  return acc;
+}, {} as ChartConfig);
+
+// Chart configuration for Chart by Category with unique colors for each category
+const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
+  const colors = ["#2563eb", "#60a5fa", "#34d399", "#f87171", "#facc15", "#ef4444", "#9333ea", "#f59e0b", "#6d28d9", "#10b981"];
+  acc[category] = { label: category, color: colors[index % colors.length] };
+  return acc;
+}, {} as ChartConfig);
 
   // Filtered categories to display in the table
   const categoriesToDisplay =
@@ -167,6 +180,73 @@ const SalesTable = () => {
     }
   };
 
+  console.log("chartData:", chartData);
+  console.log("chartDataByCategory:", chartDataByCategory);
+
+
+
+  // Render the chart by month
+const renderChartByMonth = () => (
+  <div className="mt-4">
+    <ChartContainer config={monthChartConfig} className="min-h-[300px] w-full">
+      <BarChart
+        data={chartData}
+        width={800}
+        height={400}
+        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+      >
+        <CartesianGrid vertical={false} />
+        <XAxis
+          dataKey="month"
+          tickLine={false}
+          tickMargin={10}
+          axisLine={false}
+        />
+        <YAxis />
+        <Tooltip content={<ChartTooltipContent />} />
+        <Legend />
+        {uniqueCategories.map((category) => (
+          <Bar
+            key={category}
+            dataKey={category}
+            fill={monthChartConfig[category]?.color || "#8884d8"}
+            radius={4}
+          />
+        ))}
+      </BarChart>
+    </ChartContainer>
+  </div>
+);
+
+// Render the Chart by Category with one bar per category
+const renderChartByCategory = () => (
+  <div className="mt-4">
+    <ChartContainer config={categoryChartConfig} className="min-h-[300px] w-full">
+      <BarChart
+        data={chartDataByCategory}
+        width={800}
+        height={400}
+        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+      >
+        <CartesianGrid vertical={false} />
+        <XAxis
+          dataKey="category"
+          tickLine={false}
+          tickMargin={10}
+          axisLine={false}
+        />
+        <YAxis />
+        <Tooltip content={<ChartTooltipContent />} />
+        <Legend />
+        <Bar
+          dataKey="total_sales"
+          fill="#8884d8" // Default color, can be changed as needed
+          radius={4}
+        />
+      </BarChart>
+    </ChartContainer>
+  </div>
+);
   return (
     <div className="p-4">
       <h2 className="text-2xl font-semibold mb-4">Sales Data Analysis</h2>
@@ -287,40 +367,10 @@ const SalesTable = () => {
         </div>
       )}
 
-      {/* Render Chart */}
-      <div className="mt-4">
-        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-          <BarChart
-            data={chartView === 'month' ? chartData : chartDataByCategory}
-            width={800}
-            height={400}
-            margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-          >
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey={chartView === 'month' ? "month" : "category"}
-              tickLine={false}
-              tickMargin={10}
-              axisLine={false}
-              tickFormatter={(value) => (chartView === 'month' ? value.slice(0, 3) : value)}
-            />
-            <YAxis />
-            <Tooltip content={<ChartTooltipContent />} />
-            <Legend />
-            {uniqueCategories.map((category) => (
-              <Bar
-                key={category}
-                dataKey={category}
-                fill={chartConfig[category]?.color || "#8884d8"}
-                radius={4}
-              />
-            ))}
-          </BarChart>
-        </ChartContainer>
-      </div>
+     
 
-      {/* Chart View Toggle Buttons */}
-      <div className="mb-4">
+ {/* View Toggle Buttons */}
+ <div className="mb-4">
         <button
           onClick={() => setChartView('month')}
           className="px-4 py-2 mr-2 bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -334,7 +384,14 @@ const SalesTable = () => {
           Chart By Category
         </button>
       </div>
+
+      {/* Render the selected chart */}
+      {chartView === 'month' ? renderChartByMonth() : renderChartByCategory()}
+
+
     </div>
+
+    
   );
 };
 
