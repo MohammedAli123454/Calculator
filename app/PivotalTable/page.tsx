@@ -5,6 +5,14 @@ import { sql } from "drizzle-orm";
 import { db } from "../configs/db"; // Drizzle database configuration
 import { salesData } from "../configs/schema"; // Schema for the sales data
 import { MultiSelect } from "react-multi-select-component";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from "recharts";
+
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 
 // Define the type for grouped sales data
 interface GroupedSalesData {
@@ -58,6 +66,7 @@ const SalesTable = () => {
   const [selectedCategories, setSelectedCategories] = useState<
     { label: string; value: string }[]
   >([{ label: "All", value: "All" }]); // Categories selected for filtering
+  const [chartView, setChartView] = useState<'month' | 'category'>('month'); // Chart view type
 
   // Fetch and process data on initial render
   useEffect(() => {
@@ -81,6 +90,33 @@ const SalesTable = () => {
     : groupedData.filter((item) =>
         selectedCategories.some((category) => category.value === item.category)
       );
+
+  // Chart data transformation
+  const chartData = uniqueMonths.map((month) => {
+    const monthData: Record<string, number | string> = { month: getMonthName(month) };
+    filteredData.forEach((item) => {
+      if (item.month === month) {
+        monthData[item.category] = item.total_sales;
+      }
+    });
+    return monthData;
+  });
+
+  const chartDataByCategory = uniqueCategories.map((category) => {
+    const categoryData: Record<string, number | string> = { category };
+    uniqueMonths.forEach((month) => {
+      const sales = filteredData.find((item) => item.category === category && item.month === month);
+      categoryData[month] = sales ? sales.total_sales : 0;
+    });
+    return categoryData;
+  });
+
+  // Chart configuration for ShadCN
+  const chartConfig = uniqueCategories.reduce((acc, category, index) => {
+    const colors = ["#2563eb", "#60a5fa", "#34d399", "#f87171", "#facc15"];
+    acc[category] = { label: category, color: colors[index % colors.length] };
+    return acc;
+  }, {} as ChartConfig);
 
   // Filtered categories to display in the table
   const categoriesToDisplay =
@@ -250,6 +286,54 @@ const SalesTable = () => {
           </table>
         </div>
       )}
+
+      {/* Render Chart */}
+      <div className="mt-4">
+        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+          <BarChart
+            data={chartView === 'month' ? chartData : chartDataByCategory}
+            width={800}
+            height={400}
+            margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+          >
+            <CartesianGrid vertical={false} />
+            <XAxis
+              dataKey={chartView === 'month' ? "month" : "category"}
+              tickLine={false}
+              tickMargin={10}
+              axisLine={false}
+              tickFormatter={(value) => (chartView === 'month' ? value.slice(0, 3) : value)}
+            />
+            <YAxis />
+            <Tooltip content={<ChartTooltipContent />} />
+            <Legend />
+            {uniqueCategories.map((category) => (
+              <Bar
+                key={category}
+                dataKey={category}
+                fill={chartConfig[category]?.color || "#8884d8"}
+                radius={4}
+              />
+            ))}
+          </BarChart>
+        </ChartContainer>
+      </div>
+
+      {/* Chart View Toggle Buttons */}
+      <div className="mb-4">
+        <button
+          onClick={() => setChartView('month')}
+          className="px-4 py-2 mr-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Chart By Month
+        </button>
+        <button
+          onClick={() => setChartView('category')}
+          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+        >
+          Chart By Category
+        </button>
+      </div>
     </div>
   );
 };
