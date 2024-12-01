@@ -58,6 +58,31 @@ async function fetchGroupedSalesData() {
   }
 }
 
+// Fetch and group sales data by month and category from the database
+async function fetchCategoryChartData() {
+  try {
+    const result = await db.execute(sql`
+      SELECT
+        category,
+        SUM(sales) AS total_sales
+      FROM ${salesData}
+      GROUP BY category
+      ORDER BY category
+    `);
+
+    // Transform rows into a strongly typed array
+    return (result.rows as { category: string; total_sales: number }[]).map(
+      (row) => ({
+        category: row.category,
+        total_sales: Number(row.total_sales),
+      })
+    );
+  } catch (error) {
+    console.error("Error fetching grouped sales data:", error);
+    return [];
+  }
+}
+
 const SalesTable = () => {
   const [groupedData, setGroupedData] = useState<GroupedSalesData[]>([]); // All sales data
   const [uniqueMonths, setUniqueMonths] = useState<string[]>([]); // Unique months in data
@@ -68,11 +93,16 @@ const SalesTable = () => {
   >([{ label: "All", value: "All" }]); // Categories selected for filtering
   const [chartView, setChartView] = useState<'month' | 'category'>('month'); // Chart view type
 
+  const [chartDataByCategory, setChartDataByCategory] = useState<{ category: string; total_sales: number }[]>([]);
+
   // Fetch and process data on initial render
   useEffect(() => {
     const fetchData = async () => {
       try {
         const data = await fetchGroupedSalesData();
+        const chartDataByCategory = await fetchCategoryChartData();
+        setChartDataByCategory(chartDataByCategory); // Set the chart data for categories
+
         setUniqueMonths([...new Set(data.map((item) => item.month.trim()))]);
         setUniqueCategories([...new Set(data.map((item) => item.category))]);
         setGroupedData(data);
@@ -103,18 +133,15 @@ const SalesTable = () => {
   });
 
   // Chart data for "Chart by Category"
- // Create chart data for Chart by Category: one bar per category showing total sales
-const chartDataByCategory = uniqueCategories.map((category) => {
-  // Calculate the total sales for each category across all months
-  const totalSales = filteredData
-    .filter((item) => item.category === category)
-    .reduce((sum, item) => sum + item.total_sales, 0);
-
-  return {
-    category, // Label for the X-axis
-    total_sales: totalSales, // Value for the bar
-  };
-});
+// const chartDataByCategory = uniqueCategories.map((category) => {
+//   const totalSales = filteredData
+//     .filter((item) => item.category === category)
+//     .reduce((sum, item) => sum + item.total_sales, 0);
+//   return {
+//     category, // Label for the X-axis
+//     total_sales: totalSales, // Value for the bar
+//   };
+// });
   
 
  // Chart configuration for "Chart by Month" view with colors for each month
