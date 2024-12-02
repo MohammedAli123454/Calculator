@@ -1,12 +1,7 @@
 "use client";
-
 import React, { useEffect, useState } from "react";
-import { sql } from "drizzle-orm";
-import { db } from "../configs/db"; // Drizzle database configuration
-import { salesData } from "../configs/schema"; // Schema for the sales data
 import { MultiSelect } from "react-multi-select-component";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from "recharts";
-
 import {
   ChartConfig,
   ChartContainer,
@@ -14,6 +9,13 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { useQuery } from "@tanstack/react-query";
+
+import {
+  fetchGroupedSalesData,
+  fetchCategoryChartData,
+  fetchUniqueMonths,
+  fetchUniqueCategories,
+} from "@/app/actions/queries";
 
 // Define the type for grouped sales data
 interface GroupedSalesData {
@@ -34,94 +36,7 @@ const getMonthName = (month: string) => {
   ];
   return monthNames[monthIndex];
 };
-
-// Fetch and group sales data by month and category from the database
-async function fetchGroupedSalesData() {
-  try {
-    const result = await db.execute(sql`
-      SELECT
-        TO_CHAR(date, 'YYYY-MM') AS month,
-        category,
-        SUM(sales) AS total_sales
-      FROM ${salesData}
-      GROUP BY month, category
-      ORDER BY month, category
-    `);
-
-    // Transform rows into a strongly typed array
-    return (result.rows as { month: string; category: string; total_sales: number }[]).map(
-      (row) => ({
-        month: row.month,
-        category: row.category,
-        total_sales: Number(row.total_sales),
-      })
-    );
-  } catch (error) {
-    console.error("Error fetching grouped sales data:", error);
-    return [];
-  }
-}
-
-// Fetch and group sales data by month and category from the database
-async function fetchCategoryChartData() {
-  try {
-    const result = await db.execute(sql`
-      SELECT
-        category,
-        SUM(sales) AS total_sales
-      FROM ${salesData}
-      GROUP BY category
-      ORDER BY category
-    `);
-
-    // Transform rows into a strongly typed array
-    return (result.rows as { category: string; total_sales: number }[]).map(
-      (row) => ({
-        category: row.category,
-        total_sales: Number(row.total_sales),
-      })
-    );
-  } catch (error) {
-    console.error("Error fetching grouped sales data:", error);
-    return [];
-  }
-}
-// Fetch unique months from the database
-async function fetchUniqueMonths() {
-  try {
-    const result = await db.execute(sql`
-      SELECT DISTINCT TO_CHAR(date, 'YYYY-MM') AS month
-      FROM ${salesData}
-      ORDER BY month
-    `);
-
-    // Transform rows into a strongly typed array
-    return (result.rows as { month: string }[]).map((row) => row.month);
-  } catch (error) {
-    console.error("Error fetching unique months:", error);
-    return [];
-  }
-}
-
-// Fetch unique categories from the database
-async function fetchUniqueCategories() {
-  try {
-    const result = await db.execute(sql`
-      SELECT DISTINCT category
-      FROM ${salesData}
-      ORDER BY category
-    `);
-
-    // Transform rows into a strongly typed array
-    return (result.rows as { category: string }[]).map((row) => row.category);
-  } catch (error) {
-    console.error("Error fetching unique categories:", error);
-    return [];
-  }
-}
 const SalesTable = () => {
-  
-
   const [selectedCategories, setSelectedCategories] = useState<{ label: string; value: string }[]>([{ label: "All", value: "All" }]);
   const [isPivotalView, setIsPivotalView] = useState(true);
   const [chartView, setChartView] = useState<'month' | 'category'>('month');
@@ -172,18 +87,6 @@ const SalesTable = () => {
     });
     return monthData;
   });
-
-  // Chart data for "Chart by Category"
-// const chartDataByCategory = uniqueCategories.map((category) => {
-//   const totalSales = filteredData
-//     .filter((item) => item.category === category)
-//     .reduce((sum, item) => sum + item.total_sales, 0);
-//   return {
-//     category, // Label for the X-axis
-//     total_sales: totalSales, // Value for the bar
-//   };
-// });
-  
 
  // Chart configuration for "Chart by Month" view with colors for each month
 const monthChartConfig = uniqueMonths.reduce((acc, month, index) => {
@@ -434,9 +337,6 @@ const renderChartByCategory = () => (
           </table>
         </div>
       )}
-
-     
-
  {/* View Toggle Buttons */}
  <div className="mb-4">
         <button
@@ -452,14 +352,9 @@ const renderChartByCategory = () => (
           Chart By Category AA
         </button>
       </div>
-
       {/* Render the selected chart */}
       {chartView === 'month' ? renderChartByMonth() : renderChartByCategory()}
-
-
     </div>
-
-    
   );
 };
 
