@@ -19,9 +19,9 @@ import {
 
 // Define the type for grouped sales data
 interface GroupedSalesData {
-  month: string; // 'YYYY-MM' format representing the month
-  category: string; // Product or sales category
-  total_sales: number; // Total sales amount
+  month: string;
+  category: string;
+  total_sales: number;
 }
 
 type UniqueMonths = string[];
@@ -67,9 +67,6 @@ const SalesTable = () => {
   if (loadingGroupedData || loadingChartData) return <div>Loading...</div>;
   if (errorGroupedData || errorChartData) return <div>Error loading data!</div>;
 
-  // useEffect should be at the top level and not conditional
-
-      
   // Filter data based on selected categories
   const filteredData = selectedCategories.some((item) => item.value === "All")
     ? groupedData
@@ -150,74 +147,62 @@ const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
       setSelectedCategories(selectedOptions);
     }
   };
-
   console.log("chartData:", chartData);
   console.log("chartDataByCategory:", chartDataByCategory);
 
-
-
-  // Render the chart by month
-const renderChartByMonth = () => (
-  <div className="mt-4">
-    <ChartContainer config={monthChartConfig} className="min-h-[300px] w-full">
-      <BarChart
-        data={chartData}
-        width={800}
-        height={400}
-        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-      >
-        <CartesianGrid vertical={false} />
-        <XAxis
-          dataKey="month"
-          tickLine={false}
-          tickMargin={10}
-          axisLine={false}
-        />
-        <YAxis />
-        <Tooltip content={<ChartTooltipContent />} />
-        <Legend />
-        {uniqueCategories.map((category) => (
-          <Bar
-            key={category}
-            dataKey={category}
-            fill={monthChartConfig[category]?.color || "#8884d8"}
-            radius={4}
+ // Chart component for rendering charts based on the given configuration and data
+const ChartComponent = ({
+  chartData,
+  chartConfig,
+  dataKey,
+  barKey,
+  uniqueCategories,
+}: {
+  chartData: any[];
+  chartConfig: ChartConfig;
+  dataKey: string;
+  barKey: string;
+  uniqueCategories?: string[];
+}) => {
+  return (
+    <div className="mt-4">
+      <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+        <BarChart
+          data={chartData}
+          width={800}
+          height={400}
+          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+        >
+          <CartesianGrid vertical={false} />
+          <XAxis
+            dataKey={dataKey}
+            tickLine={false}
+            tickMargin={10}
+            axisLine={false}
           />
-        ))}
-      </BarChart>
-    </ChartContainer>
-  </div>
-);
-
-// Render the Chart by Category with one bar per category
-const renderChartByCategory = () => (
-  <div className="mt-4">
-    <ChartContainer config={categoryChartConfig} className="min-h-[300px] w-full">
-      <BarChart
-        data={chartDataByCategory}
-        width={800}
-        height={400}
-        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-      >
-        <CartesianGrid vertical={false} />
-        <XAxis
-          dataKey="category"
-          tickLine={false}
-          tickMargin={10}
-          axisLine={false}
-        />
-        <YAxis />
-        <Tooltip content={<ChartTooltipContent />} />
-        <Legend />
-        <Bar
-          dataKey="total_sales"
-          fill="#8884d8" // Default color, can be changed as needed
-          radius={4}
-        />
-      </BarChart>
-    </ChartContainer>
-  </div>
-);
+          <YAxis />
+          <Tooltip content={<ChartTooltipContent />} />
+          <Legend />
+          {uniqueCategories?.map((category) => (
+            <Bar
+              key={category}
+              dataKey={category}
+              fill={chartConfig[category]?.color || "#8884d8"}
+              radius={4}
+            />
+          ))}
+          {!uniqueCategories && (
+            <Bar
+              dataKey={barKey}
+              fill="#8884d8"
+              radius={4}
+            />
+          )}
+        </BarChart>
+      </ChartContainer>
+    </div>
+  );
+};
   return (
     <div className="p-4">
       <h2 className="text-2xl font-semibold mb-4">Sales Data Analysis</h2>
@@ -353,9 +338,23 @@ const renderChartByCategory = () => (
         </button>
       </div>
       {/* Render the selected chart */}
-      {chartView === 'month' ? renderChartByMonth() : renderChartByCategory()}
+      {chartView === 'month' ? (
+        <ChartComponent
+          chartData={chartData}
+          chartConfig={monthChartConfig}
+          dataKey="month"
+          barKey="total_sales"
+          uniqueCategories={uniqueCategories}
+        />
+      ) : (
+        <ChartComponent
+          chartData={chartDataByCategory}
+          chartConfig={categoryChartConfig}
+          dataKey="category"
+          barKey="total_sales"
+        />
+      )}
     </div>
   );
 };
-
 export default SalesTable;
