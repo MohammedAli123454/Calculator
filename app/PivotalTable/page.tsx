@@ -17,6 +17,10 @@ import {
   fetchUniqueCategories,
 } from "@/app/actions/queries";
 
+import  ChartComponent  from "@/components/ChartComponent"
+
+//import ChartComponent from  // Import the ChartComponent
+
 // Define the type for grouped sales data
 interface GroupedSalesData {
   month: string;
@@ -150,59 +154,7 @@ const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
   console.log("chartData:", chartData);
   console.log("chartDataByCategory:", chartDataByCategory);
 
- // Chart component for rendering charts based on the given configuration and data
-const ChartComponent = ({
-  chartData,
-  chartConfig,
-  dataKey,
-  barKey,
-  uniqueCategories,
-}: {
-  chartData: any[];
-  chartConfig: ChartConfig;
-  dataKey: string;
-  barKey: string;
-  uniqueCategories?: string[];
-}) => {
-  return (
-    <div className="mt-4">
-      <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-        <BarChart
-          data={chartData}
-          width={800}
-          height={400}
-          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-        >
-          <CartesianGrid vertical={false} />
-          <XAxis
-            dataKey={dataKey}
-            tickLine={false}
-            tickMargin={10}
-            axisLine={false}
-          />
-          <YAxis />
-          <Tooltip content={<ChartTooltipContent />} />
-          <Legend />
-          {uniqueCategories?.map((category) => (
-            <Bar
-              key={category}
-              dataKey={category}
-              fill={chartConfig[category]?.color || "#8884d8"}
-              radius={4}
-            />
-          ))}
-          {!uniqueCategories && (
-            <Bar
-              dataKey={barKey}
-              fill="#8884d8"
-              radius={4}
-            />
-          )}
-        </BarChart>
-      </ChartContainer>
-    </div>
-  );
-};
+ 
   return (
     <div className="p-4">
       <h2 className="text-2xl font-semibold mb-4">Sales Data Analysis</h2>
