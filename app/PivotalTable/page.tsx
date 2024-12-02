@@ -13,6 +13,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { useQuery } from "@tanstack/react-query";
 
 // Define the type for grouped sales data
 interface GroupedSalesData {
@@ -20,6 +21,9 @@ interface GroupedSalesData {
   category: string; // Product or sales category
   total_sales: number; // Total sales amount
 }
+
+type UniqueMonths = string[];
+type UniqueCategories = string[];
 
 // Utility function to get month names (e.g., 'Jan', 'Feb') from 'YYYY-MM' format
 const getMonthName = (month: string) => {
@@ -82,38 +86,75 @@ async function fetchCategoryChartData() {
     return [];
   }
 }
+// Fetch unique months from the database
+async function fetchUniqueMonths() {
+  try {
+    const result = await db.execute(sql`
+      SELECT DISTINCT TO_CHAR(date, 'YYYY-MM') AS month
+      FROM ${salesData}
+      ORDER BY month
+    `);
 
+    // Transform rows into a strongly typed array
+    return (result.rows as { month: string }[]).map((row) => row.month);
+  } catch (error) {
+    console.error("Error fetching unique months:", error);
+    return [];
+  }
+}
+
+// Fetch unique categories from the database
+async function fetchUniqueCategories() {
+  try {
+    const result = await db.execute(sql`
+      SELECT DISTINCT category
+      FROM ${salesData}
+      ORDER BY category
+    `);
+
+    // Transform rows into a strongly typed array
+    return (result.rows as { category: string }[]).map((row) => row.category);
+  } catch (error) {
+    console.error("Error fetching unique categories:", error);
+    return [];
+  }
+}
 const SalesTable = () => {
-  const [groupedData, setGroupedData] = useState<GroupedSalesData[]>([]); // All sales data
-  const [uniqueMonths, setUniqueMonths] = useState<string[]>([]); // Unique months in data
-  const [uniqueCategories, setUniqueCategories] = useState<string[]>([]); // Unique categories in data
-  const [isPivotalView, setIsPivotalView] = useState(true); // Toggle view type
-  const [selectedCategories, setSelectedCategories] = useState<
-    { label: string; value: string }[]
-  >([{ label: "All", value: "All" }]); // Categories selected for filtering
-  const [chartView, setChartView] = useState<'month' | 'category'>('month'); // Chart view type
+  
 
-  const [chartDataByCategory, setChartDataByCategory] = useState<{ category: string; total_sales: number }[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<{ label: string; value: string }[]>([{ label: "All", value: "All" }]);
+  const [isPivotalView, setIsPivotalView] = useState(true);
+  const [chartView, setChartView] = useState<'month' | 'category'>('month');
 
-  // Fetch and process data on initial render
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await fetchGroupedSalesData();
-        const chartDataByCategory = await fetchCategoryChartData();
-        setChartDataByCategory(chartDataByCategory); // Set the chart data for categories
+  // Data fetching with react-query
+  const { data: groupedData = [], isLoading: loadingGroupedData, error: errorGroupedData } = useQuery({
+    queryKey: ["groupedSalesData"],
+    queryFn: fetchGroupedSalesData,
+  });
 
-        setUniqueMonths([...new Set(data.map((item) => item.month.trim()))]);
-        setUniqueCategories([...new Set(data.map((item) => item.category))]);
-        setGroupedData(data);
-      } catch (error) {
-        console.error("Error fetching sales data:", error);
-      }
-    };
+  const { data: chartDataByCategory = [], isLoading: loadingChartData, error: errorChartData } = useQuery({
+    queryKey: ["categoryChartData"],
+    queryFn: fetchCategoryChartData,
+  });
 
-    fetchData();
-  }, []);
 
+  const { data: uniqueMonths = [], isLoading: loadingUniqueMonths, error: errorUniqueMonths } = useQuery({
+    queryKey: ['uniqueMonths'],
+    queryFn: fetchUniqueMonths,
+  });
+
+  const { data: uniqueCategories = [], isLoading: loadingUniqueCategories, error: errorUniqueCategories } = useQuery({
+    queryKey: ['uniqueCategories'],
+    queryFn: fetchUniqueCategories,
+  });
+
+  // Loading and error checks
+  if (loadingGroupedData || loadingChartData) return <div>Loading...</div>;
+  if (errorGroupedData || errorChartData) return <div>Error loading data!</div>;
+
+  // useEffect should be at the top level and not conditional
+
+      
   // Filter data based on selected categories
   const filteredData = selectedCategories.some((item) => item.value === "All")
     ? groupedData
