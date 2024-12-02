@@ -7,7 +7,7 @@ export async function fetchGroupedSalesData() {
   try {
     const result = await db.execute(sql`
       SELECT
-        TO_CHAR(date, 'YYYY-MM') AS month,
+        TO_CHAR(date, 'Mon') AS month,
         category,
         SUM(sales) AS total_sales
       FROM ${salesData}
@@ -56,7 +56,7 @@ export async function fetchCategoryChartData() {
 export async function fetchUniqueMonths() {
   try {
     const result = await db.execute(sql`
-      SELECT DISTINCT TO_CHAR(date, 'YYYY-MM') AS month
+      SELECT DISTINCT   TO_CHAR(date, 'Mon') AS month
       FROM ${salesData}
       ORDER BY month
     `);

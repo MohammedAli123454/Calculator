@@ -9,7 +9,6 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { useQuery } from "@tanstack/react-query";
-import { LoaderCircle } from "lucide-react";  // Import LoaderCircle component
 import {
   fetchGroupedSalesData,
   fetchCategoryChartData,
@@ -17,24 +16,7 @@ import {
   fetchUniqueCategories,
 } from "@/app/actions/queries";
 import  ChartComponent  from "@/components/ChartComponent"
-interface GroupedSalesData {
-  month: string;
-  category: string;
-  total_sales: number;
-}
-
-type UniqueMonths = string[];
-type UniqueCategories = string[];
-
-// Utility function to get month names (e.g., 'Jan', 'Feb') from 'YYYY-MM' format
-const getMonthName = (month: string) => {
-  const monthIndex = parseInt(month.split("-")[1], 10) - 1; // Extract zero-based month index
-  const monthNames = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-  ];
-  return monthNames[monthIndex];
-};
+import LoadingSpinner from "@/components/LoadingSpinner";
 const SalesTable = () => {
   const [selectedCategories, setSelectedCategories] = useState<{ label: string; value: string }[]>([{ label: "All", value: "All" }]);
   const [isPivotalView, setIsPivotalView] = useState(true);
@@ -51,7 +33,6 @@ const SalesTable = () => {
     queryFn: fetchCategoryChartData,
   });
 
-
   const { data: uniqueMonths = [], isLoading: loadingUniqueMonths, error: errorUniqueMonths } = useQuery({
     queryKey: ['uniqueMonths'],
     queryFn: fetchUniqueMonths,
@@ -62,25 +43,12 @@ const SalesTable = () => {
     queryFn: fetchUniqueCategories,
   });
 
-// Check for loading state and display spinner with a card
-if (loadingGroupedData || loadingChartData || loadingUniqueMonths || loadingUniqueCategories) {
-  return (
-    <div className="fixed inset-0 flex items-center justify-center z-50">
-      <div className="w-128 p-16 bg-gray-100 rounded-lg shadow-lg flex flex-col items-center justify-center">
-        <div className="flex items-center justify-center mb-4">
-          <LoaderCircle className="animate-spin" color="blue" size={48} />
-        </div>
-        <p className="text-center text-lg font-medium text-gray-700">
-          Loading data, please wait...
-        </p>
-      </div>
-    </div>
-  );
-}
+  // Check for loading state and display spinner with a card
+  if (loadingGroupedData || loadingChartData || loadingUniqueMonths || loadingUniqueCategories) {
+    return <LoadingSpinner />;
+  }
 
-
-
-if (errorGroupedData || errorChartData) return <div>Error loading data!</div>;
+  if (errorGroupedData || errorChartData) return <div>Error loading data!</div>;
 
   // Filter data based on selected categories
   const filteredData = selectedCategories.some((item) => item.value === "All")
@@ -91,7 +59,7 @@ if (errorGroupedData || errorChartData) return <div>Error loading data!</div>;
 
   // Chart data for "Chart by Month"
   const chartData = uniqueMonths.map((month) => {
-    const monthData: Record<string, number | string> = { month: getMonthName(month) };
+    const monthData: Record<string, number | string> = { month };
     filteredData.forEach((item) => {
       if (item.month === month) {
         monthData[item.category] = item.total_sales;
@@ -100,19 +68,19 @@ if (errorGroupedData || errorChartData) return <div>Error loading data!</div>;
     return monthData;
   });
 
- // Chart configuration for "Chart by Month" view with colors for each month
-const monthChartConfig = uniqueMonths.reduce((acc, month, index) => {
-  const colors = ["#2563eb", "#60a5fa", "#34d399", "#f87171", "#facc15", "#ef4444", "#9333ea", "#f59e0b", "#6d28d9", "#10b981"];
-  acc[month] = { label: getMonthName(month), color: colors[index % colors.length] };
-  return acc;
-}, {} as ChartConfig);
+  // Chart configuration for "Chart by Month" view with colors for each month
+  const monthChartConfig = uniqueMonths.reduce((acc, month, index) => {
+    const colors = ["#2563eb", "#60a5fa", "#34d399", "#f87171", "#facc15", "#ef4444", "#9333ea", "#f59e0b", "#6d28d9", "#10b981"];
+    acc[month] = { label: month, color: colors[index % colors.length] };
+    return acc;
+  }, {} as ChartConfig);
 
-// Chart configuration for Chart by Category with unique colors for each category
-const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
-  const colors = ["#2563eb", "#60a5fa", "#34d399", "#f87171", "#facc15", "#ef4444", "#9333ea", "#f59e0b", "#6d28d9", "#10b981"];
-  acc[category] = { label: category, color: colors[index % colors.length] };
-  return acc;
-}, {} as ChartConfig);
+  // Chart configuration for Chart by Category with unique colors for each category
+  const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
+    const colors = ["#2563eb", "#60a5fa", "#34d399", "#f87171", "#facc15", "#ef4444", "#9333ea", "#f59e0b", "#6d28d9", "#10b981"];
+    acc[category] = { label: category, color: colors[index % colors.length] };
+    return acc;
+  }, {} as ChartConfig);
 
   // Filtered categories to display in the table
   const categoriesToDisplay =
@@ -162,6 +130,7 @@ const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
       setSelectedCategories(selectedOptions);
     }
   };
+
   console.log("chartData:", chartData);
   console.log("chartDataByCategory:", chartDataByCategory);
 
@@ -209,7 +178,7 @@ const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
                 <th className="border border-gray-400 px-4 py-2">Category</th>
                 {uniqueMonths.map((month) => (
                   <th key={month} className="border border-gray-400 px-4 py-2">
-                    {getMonthName(month)}
+                    {month}
                   </th>
                 ))}
                 <th className="border border-gray-400 px-4 py-2">Total</th>
@@ -273,7 +242,7 @@ const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
               {filteredData.map((item, index) => (
                 <tr key={index}>
                   <td className="border border-gray-400 px-4 py-2">
-                    {getMonthName(item.month)}
+                    {item.month}
                   </td>
                   <td className="border border-gray-400 px-4 py-2">{item.category}</td>
                   <td className="border border-gray-400 px-4 py-2 text-center">
