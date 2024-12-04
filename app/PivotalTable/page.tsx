@@ -65,8 +65,6 @@ const sortedUniqueMonths = uniqueMonths.sort((a, b) => {
         selectedCategories.some((category) => category.value === item.category)
       );
 
-      
-
   // Chart data for "Chart by Month"
   const chartData = sortedUniqueMonths.map((month) => {
     const monthData: Record<string, number | string> = { month };
@@ -148,8 +146,11 @@ console.log('categoryChartConfig:', categoryChartConfig);
     }
   };
 
-  console.log("chartData:", chartData);
-  console.log("chartDataByCategory:", chartDataByCategory);
+  // Map over chartDataByCategory to add the fill property based on category other wise the bar colors will be same foer all categories
+const chartDataWithColors = chartDataByCategory.map((dataItem) => ({
+  ...dataItem,
+  fill: categoryChartConfig[dataItem.category]?.color || "#8884d8", // Fallback color
+}));
 
  
   return (
@@ -297,7 +298,7 @@ console.log('categoryChartConfig:', categoryChartConfig);
         />
       ) : (
         <ChartWithSingleCategory
-          chartData={chartDataByCategory}
+          chartData={chartDataWithColors}
           chartConfig={categoryChartConfig}
           dataKey="category"
           barKey="total_sales"
