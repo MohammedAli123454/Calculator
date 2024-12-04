@@ -22,9 +22,17 @@ const PivotalTable = <T extends Record<string, any>>({
   valueKey,
   formatNumber,
 }: PivotalTableProps<T>) => {
-  // Extract unique row and column keys
   const rowKeys = Array.from(new Set(data.map((item) => item[rowKey])));
   const columnKeys = Array.from(new Set(data.map((item) => item[columnKey])));
+
+  // Create a lookup map for quick data access
+  const dataMap: Record<string, Record<string, any>> = {};
+  data.forEach((item) => {
+    const row = item[rowKey] as string;
+    const col = item[columnKey] as string;
+    if (!dataMap[row]) dataMap[row] = {};
+    dataMap[row][col] = item[valueKey];
+  });
 
   // Compute row and column totals in a single loop
   const rowTotals: Record<string, number> = {};
@@ -62,16 +70,11 @@ const PivotalTable = <T extends Record<string, any>>({
           {rowKeys.map((row) => (
             <tr key={row as string}>
               <td className="border border-gray-400 px-4 py-2 font-medium">{row}</td>
-              {columnKeys.map((col) => {
-                const value = data.find(
-                  (item) => item[rowKey] === row && item[columnKey] === col
-                )?.[valueKey];
-                return (
-                  <td key={`${row}-${col}`} className="border border-gray-400 px-4 py-2 text-center">
-                    {renderCellValue(value, formatNumber)}
-                  </td>
-                );
-              })}
+              {columnKeys.map((col) => (
+                <td key={`${row}-${col}`} className="border border-gray-400 px-4 py-2 text-center">
+                  {renderCellValue(dataMap[row]?.[col], formatNumber)}
+                </td>
+              ))}
               <td className="border border-gray-400 px-4 py-2 text-center">
                 {renderCellValue(rowTotals[row], formatNumber)}
               </td>
