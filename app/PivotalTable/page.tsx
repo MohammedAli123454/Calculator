@@ -17,6 +17,8 @@ import {
 } from "@/app/actions/queries";
 import  ChartComponent  from "@/components/ChartComponent"
 import LoadingSpinner from "@/components/LoadingSpinner";
+import ChartWithManyCategories from "@/components/ChartWithManyCategories";
+import ChartWithSingleCategory from "@/components/ChartWithSingleCategory";
 const SalesTable = () => {
   const [selectedCategories, setSelectedCategories] = useState<{ label: string; value: string }[]>([{ label: "All", value: "All" }]);
   const [isPivotalView, setIsPivotalView] = useState(true);
@@ -57,6 +59,8 @@ const SalesTable = () => {
         selectedCategories.some((category) => category.value === item.category)
       );
 
+      
+
   // Chart data for "Chart by Month"
   const chartData = uniqueMonths.map((month) => {
     const monthData: Record<string, number | string> = { month };
@@ -68,19 +72,26 @@ const SalesTable = () => {
     return monthData;
   });
 
-  // Chart configuration for "Chart by Month" view with colors for each month
-  const monthChartConfig = uniqueMonths.reduce((acc, month, index) => {
-    const colors = ["#2563eb", "#60a5fa", "#34d399", "#f87171", "#facc15", "#ef4444", "#9333ea", "#f59e0b", "#6d28d9", "#10b981"];
-    acc[month] = { label: month, color: colors[index % colors.length] };
-    return acc;
-  }, {} as ChartConfig);
+ // Chart configuration for "Chart by Month" view with colors for each month
+ const monthChartConfig: ChartConfig = uniqueCategories.reduce((acc, category, index) => {
+  const colors = ["#2563eb", "#60a5fa", "#34d399", "#f87171", "#facc15", "#ef4444", "#9333ea", "#f59e0b", "#6d28d9", "#10b981"];
+  acc[category] = { label: category, color: colors[index % colors.length] };
+  return acc;
+}, {} as ChartConfig);
 
   // Chart configuration for Chart by Category with unique colors for each category
-  const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
-    const colors = ["#2563eb", "#60a5fa", "#34d399", "#f87171", "#facc15", "#ef4444", "#9333ea", "#f59e0b", "#6d28d9", "#10b981"];
-    acc[category] = { label: category, color: colors[index % colors.length] };
-    return acc;
-  }, {} as ChartConfig);
+
+const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
+  const colors = ["#2563eb", "#60a5fa", "#34d399", "#f87171", "#facc15", "#ef4444", "#9333ea", "#f59e0b", "#6d28d9", "#10b981"];
+  acc[category] = { label: category, color: colors[index % colors.length] };
+  return acc;
+}, {} as ChartConfig);
+
+console.log('categoryChartConfig:', categoryChartConfig);
+
+
+  console.log(JSON.stringify(categoryChartConfig, null, 2)); // Pretty print the object with indentation
+  
 
   // Filtered categories to display in the table
   const categoriesToDisplay =
@@ -271,7 +282,7 @@ const SalesTable = () => {
       </div>
       {/* Render the selected chart */}
       {chartView === 'month' ? (
-        <ChartComponent
+        <ChartWithManyCategories
           chartData={chartData}
           chartConfig={monthChartConfig}
           dataKey="month"
@@ -279,7 +290,7 @@ const SalesTable = () => {
           uniqueCategories={uniqueCategories}
         />
       ) : (
-        <ChartComponent
+        <ChartWithSingleCategory
           chartData={chartDataByCategory}
           chartConfig={categoryChartConfig}
           dataKey="category"

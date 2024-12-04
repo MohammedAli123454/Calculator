@@ -73,6 +73,11 @@ const data = {
           title: "Pivotal Table",
           url: "/PivotalTable",
         },
+
+        {
+          title: "Color Values Print",
+          url: "/ChartConfigDisplay",
+        },
       ],
     },
 
