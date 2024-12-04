@@ -91,11 +91,13 @@ const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
   return acc;
 }, {} as ChartConfig);
 
-console.log('categoryChartConfig:', categoryChartConfig);
-
-
-  console.log(JSON.stringify(categoryChartConfig, null, 2)); // Pretty print the object with indentation
+  // Add fill property to the chart data otherwise the bar colors will be same
+  const chartDataWithColors = chartDataByCategory.map((dataItem) => ({
+    ...dataItem,
+    fill: categoryChartConfig[dataItem.category]?.color || "#8884d8", // Fallback color
+  }));
   
+
 
   // Filtered categories to display in the table
   const categoriesToDisplay =
@@ -146,13 +148,6 @@ console.log('categoryChartConfig:', categoryChartConfig);
     }
   };
 
-  // Map over chartDataByCategory to add the fill property based on category other wise the bar colors will be same foer all categories
-const chartDataWithColors = chartDataByCategory.map((dataItem) => ({
-  ...dataItem,
-  fill: categoryChartConfig[dataItem.category]?.color || "#8884d8", // Fallback color
-}));
-
- 
   return (
     <div className="p-4">
       <h2 className="text-2xl font-semibold mb-4">Sales Data Analysis</h2>
