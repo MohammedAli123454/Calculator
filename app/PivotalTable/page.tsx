@@ -52,6 +52,12 @@ const SalesTable = () => {
 
   if (errorGroupedData || errorChartData) return <div>Error loading data!</div>;
 
+  const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+const sortedUniqueMonths = uniqueMonths.sort((a, b) => {
+  return monthOrder.indexOf(a) - monthOrder.indexOf(b);
+});
+
   // Filter data based on selected categories
   const filteredData = selectedCategories.some((item) => item.value === "All")
     ? groupedData
@@ -62,7 +68,7 @@ const SalesTable = () => {
       
 
   // Chart data for "Chart by Month"
-  const chartData = uniqueMonths.map((month) => {
+  const chartData = sortedUniqueMonths.map((month) => {
     const monthData: Record<string, number | string> = { month };
     filteredData.forEach((item) => {
       if (item.month === month) {
