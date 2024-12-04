@@ -19,10 +19,18 @@ import  ChartComponent  from "@/components/ChartComponent"
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ChartWithManyCategories from "@/components/ChartWithManyCategories";
 import ChartWithSingleCategory from "@/components/ChartWithSingleCategory";
+import SimpleTable from "@/components/SimpleTable";
+import PivotalTable from "@/components/PivotalTable";
 const SalesTable = () => {
   const [selectedCategories, setSelectedCategories] = useState<{ label: string; value: string }[]>([{ label: "All", value: "All" }]);
   const [isPivotalView, setIsPivotalView] = useState(true);
   const [chartView, setChartView] = useState<'month' | 'category'>('month');
+
+  type SalesData = {
+    month: string;
+    category: string;
+    total_sales: number;
+  };
 
   // Data fetching with react-query
   const { data: groupedData = [], isLoading: loadingGroupedData, error: errorGroupedData } = useQuery({
@@ -58,12 +66,15 @@ const sortedUniqueMonths = uniqueMonths.sort((a, b) => {
   return monthOrder.indexOf(a) - monthOrder.indexOf(b);
 });
 
-  // Filter data based on selected categories
-  const filteredData = selectedCategories.some((item) => item.value === "All")
-    ? groupedData
-    : groupedData.filter((item) =>
-        selectedCategories.some((category) => category.value === item.category)
-      );
+ // Ensure groupedData is typed correctly
+ const groupedDataTyped: SalesData[] = groupedData as SalesData[];
+
+ // Filter data based on selected categories
+ const filteredData: SalesData[] = selectedCategories.some((item) => item.value === "All")
+   ? groupedDataTyped
+   : groupedDataTyped.filter((item) =>
+       selectedCategories.some((category) => category.value === item.category)
+     );
 
   // Chart data for "Chart by Month"
   const chartData = sortedUniqueMonths.map((month) => {
@@ -148,6 +159,8 @@ const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
     }
   };
 
+
+
   return (
     <div className="p-4">
       <h2 className="text-2xl font-semibold mb-4">Sales Data Analysis</h2>
@@ -184,88 +197,23 @@ const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
 
       {/* Render Table */}
       {isPivotalView ? (
-        <div className="overflow-auto max-h-96">
-          <table className="min-w-full border-collapse border border-gray-400 shadow-md">
-            <thead>
-              <tr className="bg-gray-200">
-                <th className="border border-gray-400 px-4 py-2">Category</th>
-                {uniqueMonths.map((month) => (
-                  <th key={month} className="border border-gray-400 px-4 py-2">
-                    {month}
-                  </th>
-                ))}
-                <th className="border border-gray-400 px-4 py-2">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {categoriesToDisplay.map((category) => (
-                <tr key={category}>
-                  <td className="border border-gray-400 px-4 py-2 font-medium">
-                    {category}
-                  </td>
-                  {uniqueMonths.map((month) => {
-                    const sales = filteredData.find(
-                      (item) =>
-                        item.category === category && item.month === month
-                    );
-                    return (
-                      <td
-                        key={`${category}-${month}`}
-                        className="border border-gray-400 px-4 py-2 text-center"
-                      >
-                        {sales ? formatNumber(sales.total_sales) : "-"}
-                      </td>
-                    );
-                  })}
-                  <td className="border border-gray-400 px-4 py-2 text-center font-semibold">
-                    {formatNumber(calculateCategoryTotal(category))}
-                  </td>
-                </tr>
-              ))}
-              <tr className="bg-gray-200">
-                <td className="border border-gray-400 px-4 py-2 font-bold">
-                  Grand Total
-                </td>
-                {uniqueMonths.map((month) => (
-                  <td
-                    key={`total-${month}`}
-                    className="border border-gray-400 px-4 py-2 text-center font-bold"
-                  >
-                    {formatNumber(calculateMonthTotal(month))}
-                  </td>
-                ))}
-                <td className="border border-gray-400 px-4 py-2 text-center font-bold">
-                  {formatNumber(calculateGrandTotal())}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <PivotalTable
+          data={filteredData}  // Ensure the filteredData is passed correctly
+          rowKey="category"
+          columnKey="month"
+          valueKey="total_sales"
+          formatNumber={(num) => num.toLocaleString()}
+        />
       ) : (
-        <div className="overflow-auto max-h-96">
-          <table className="min-w-full border-collapse border border-gray-400 shadow-md">
-            <thead>
-              <tr className="bg-gray-200">
-                <th className="border border-gray-400 px-4 py-2">Month</th>
-                <th className="border border-gray-400 px-4 py-2">Category</th>
-                <th className="border border-gray-400 px-4 py-2">Total Sales</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredData.map((item, index) => (
-                <tr key={index}>
-                  <td className="border border-gray-400 px-4 py-2">
-                    {item.month}
-                  </td>
-                  <td className="border border-gray-400 px-4 py-2">{item.category}</td>
-                  <td className="border border-gray-400 px-4 py-2 text-center">
-                    {formatNumber(item.total_sales)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <SimpleTable
+          data={filteredData}  // Ensure the filteredData is passed correctly
+          columns={[
+            { header: "Month", accessor: "month" },
+            { header: "Category", accessor: "category" },
+            { header: "Total Sales", accessor: "total_sales" },
+          ]}
+          formatNumber={(num) => num.toLocaleString()}
+        />
       )}
  {/* View Toggle Buttons */}
  <div className="mb-4">
