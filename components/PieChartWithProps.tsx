@@ -31,13 +31,15 @@ const PieChartWithProps: React.FC<PieChartProps> = ({
     <div className="mt-4">
       <ChartContainer
         config={chartConfig}
-        className="mx-auto aspect-square max-h-[250px] [&_.recharts-text]:fill-background"
+        className="mx-auto max-w-[500px] max-h-[600px] [&_.recharts-text]:fill-background" // Ensure the container allows for max size
       >
-        <PieChart>
+    <PieChart width={600} height={600}> 
           <ChartTooltip
             content={<ChartTooltipContent nameKey={dataKey} hideLabel />}
           />
-          <Pie data={chartData} dataKey={pieKey} nameKey={dataKey} cx="50%" cy="50%" outerRadius={120}>
+          <Pie data={chartData} dataKey={pieKey} nameKey={dataKey} cx="50%"
+            cy="50%"
+            outerRadius={140}>
             <LabelList
               dataKey={dataKey}
               className="fill-background"

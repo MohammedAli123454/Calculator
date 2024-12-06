@@ -31,11 +31,15 @@ import {
   MenubarShortcut,
   MenubarTrigger,
 } from "@/components/ui/menubar"
+import { Dialog, DialogContent, DialogTrigger,DialogTitle } from "@/components/ui/dialog";
+
 
 const SalesTable = () => {
   const [selectedCategories, setSelectedCategories] = useState<{ label: string; value: string }[]>([{ label: "All", value: "All" }]);
   const [isPivotalView, setIsPivotalView] = useState(true);
   const [chartView, setChartView] = useState<'month' | 'category' | 'pie'>('month');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogTitle, setDialogTitle] = useState("Chart View");
 
   type SalesData = {
     month: string;
@@ -156,6 +160,26 @@ const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
       setSelectedCategories(selectedOptions);
     }
   };
+// Update dialog title based on selected menu item
+const handleMenuSelect = (viewType: string) => {
+  setChartView(viewType as 'month' | 'category' | 'pie');
+  setIsDialogOpen(true);
+  let title = "";
+  switch (viewType) {
+    case 'month':
+      title = "Detailed View (Bar Chart)";
+      break;
+    case 'category':
+      title = "Category Summary (Bar Chart)";
+      break;
+    case 'pie':
+      title = "Category Distribution (Pie Chart)";
+      break;
+    default:
+      title = "Chart View";
+  }
+  setDialogTitle(title);
+};
 
 
 
@@ -177,45 +201,93 @@ const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
         />
       </div>
  {/* View Toggle Menu */}
- <div mb-4>
-        <Menubar>
-          <MenubarMenu>
-            <MenubarTrigger>Chart View</MenubarTrigger>
-            <MenubarContent>
-              <MenubarItem onSelect={() => setChartView('month')}>
-                Detailed View (Bar Chart)
-              </MenubarItem>
-              <MenubarItem onSelect={() => setChartView('category')}>
-                Category Summary (Bar Chart)
-              </MenubarItem>
-              <MenubarItem onSelect={() => setChartView('pie')}>
-                Category Distribution (Pie Chart)
-              </MenubarItem>
-            </MenubarContent>
-          </MenubarMenu>
-        </Menubar>
-      </div>
-
+ <div className="mb-4">
+          <Menubar>
+            <MenubarMenu>
+              <MenubarTrigger>Chart View</MenubarTrigger>
+              <MenubarContent>
+                <MenubarItem onSelect={() => handleMenuSelect('month')}>
+                  Detailed View (Bar Chart)
+                </MenubarItem>
+                <MenubarItem onSelect={() => handleMenuSelect('category')}>
+                  Category Summary (Bar Chart)
+                </MenubarItem>
+                <MenubarItem onSelect={() => handleMenuSelect('pie')}>
+                  Category Distribution (Pie Chart)
+                </MenubarItem>
+              </MenubarContent>
+            </MenubarMenu>
+          </Menubar>
+        </div>
 
 
  {/* View Toggle Menu */}
- <div mb-4>
-        <Menubar>
-          <MenubarMenu>
-            <MenubarTrigger>Table View</MenubarTrigger>
-            <MenubarContent>
-              <MenubarItem onSelect={() => setIsPivotalView(true)}>
-                Pivotal View
-              </MenubarItem>
-              <MenubarItem onSelect={() => setIsPivotalView(false)}>
-                Detail View
-              </MenubarItem>
-            </MenubarContent>
-          </MenubarMenu>
-        </Menubar>
-      </div>
+ <div className="mb-4">
+  <Menubar>
+    <MenubarMenu>
+      <MenubarTrigger>Table View</MenubarTrigger>
+      <MenubarContent>
+        <MenubarItem onSelect={() => setIsPivotalView(true)}>
+          Pivotal View
+        </MenubarItem>
+        <MenubarItem onSelect={() => setIsPivotalView(false)}>
+          Detail View
+        </MenubarItem>
+      </MenubarContent>
+    </MenubarMenu>
+  </Menubar>
 </div>
-      
+
+</div>
+
+
+
+<Dialog open={isDialogOpen} onOpenChange={(open) => setIsDialogOpen(open)}>
+  <DialogTrigger className="ml-2 bg-blue-500 text-white px-4 py-2 rounded">View Chart</DialogTrigger>
+  <DialogContent
+    aria-describedby="chart-description" // Add this line to reference the description
+    style={{ minWidth: '1000px', minHeight: '700px' }}
+  >
+  <DialogTitle>{dialogTitle}</DialogTitle>
+    <p id="chart-description" className="sr-only">This dialog displays different types of sales data charts.</p> {/* Hidden description */}
+    <div className="p-4">
+      {/* Render the selected chart */}
+      {chartView === 'month' && (
+        <ChartWithManyCategories
+          chartData={chartData}
+          chartConfig={monthChartConfig}
+          dataKey="month"
+          barKey="total_sales"
+          uniqueCategories={uniqueCategories}
+        />
+      )}
+      {chartView === 'category' && (
+        <ChartWithSingleCategory
+          chartData={chartDataWithColors}
+          chartConfig={categoryChartConfig}
+          dataKey="category"
+          barKey="total_sales"
+        />
+      )}
+      {chartView === 'pie' && (
+        <PieChartWithProps
+          chartData={chartDataWithColors}
+          chartConfig={categoryChartConfig}
+          dataKey="category"
+          pieKey="total_sales"
+        />
+      )}
+    </div>
+    <button
+            onClick={() => setIsDialogOpen(false)}
+            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
+          >
+            Close
+          </button>
+  </DialogContent>
+</Dialog>
+
+        
       {/* Render Table */}
       {isPivotalView ? (
         <PivotalTable
@@ -236,31 +308,6 @@ const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
           formatNumber={(num) => num.toLocaleString()}
         />
       )}
-
-      {/* Render the selected chart */}
-      {chartView === 'month' ? (
-  <ChartWithManyCategories
-    chartData={chartData}
-    chartConfig={monthChartConfig}
-    dataKey="month"
-    barKey="total_sales"
-    uniqueCategories={uniqueCategories}
-  />
-) : chartView === 'category' ? (
-  <ChartWithSingleCategory
-    chartData={chartDataWithColors}
-    chartConfig={categoryChartConfig}
-    dataKey="category"
-    barKey="total_sales"
-  />
-) : chartView === 'pie' ? (
-  <PieChartWithProps
-    chartData={chartDataWithColors}
-    chartConfig={categoryChartConfig}
-    dataKey="category"
-    pieKey="total_sales"
-  />
-) : null}
     </div>
   );
 };
