@@ -21,10 +21,21 @@ import ChartWithManyCategories from "@/components/ChartWithManyCategories";
 import ChartWithSingleCategory from "@/components/ChartWithSingleCategory";
 import SimpleTable from "@/components/SimpleTable";
 import PivotalTable from "@/components/PivotalTable";
+import PieChartWithProps from "@/components/PieChartWithProps";
+import {
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarSeparator,
+  MenubarShortcut,
+  MenubarTrigger,
+} from "@/components/ui/menubar"
+
 const SalesTable = () => {
   const [selectedCategories, setSelectedCategories] = useState<{ label: string; value: string }[]>([{ label: "All", value: "All" }]);
   const [isPivotalView, setIsPivotalView] = useState(true);
-  const [chartView, setChartView] = useState<'month' | 'category'>('month');
+  const [chartView, setChartView] = useState<'month' | 'category' | 'pie'>('month');
 
   type SalesData = {
     month: string;
@@ -128,19 +139,6 @@ const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
       return total + (sales ? sales.total_sales : 0);
     }, 0);
 
-  // Calculate total sales for a specific month
-  const calculateMonthTotal = (month: string) =>
-    categoriesToDisplay.reduce((total, category) => {
-      const sales = filteredData.find(
-        (item) => item.category === category && item.month.trim() === month
-      );
-      return total + (sales ? sales.total_sales : 0);
-    }, 0);
-
-  // Calculate the overall grand total of sales
-  const calculateGrandTotal = () =>
-    filteredData.reduce((total, item) => total + item.total_sales, 0);
-
   // Multi-select options for categories
   const categoryOptions = [
     { label: "All", value: "All" },
@@ -164,7 +162,7 @@ const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
   return (
     <div className="p-4">
       <h2 className="text-2xl font-semibold mb-4">Sales Data Analysis</h2>
-
+      <div className="flex items-center justify-between mb-4">
       {/* Filter by Category */}
       <div className="mb-4 flex items-center gap-4">
         <label htmlFor="category-select" className="font-medium">
@@ -178,23 +176,46 @@ const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
           className="w-80 border rounded"
         />
       </div>
-
-      {/* View Toggle Buttons */}
-      <div className="mb-4">
-        <button
-          onClick={() => setIsPivotalView(false)}
-          className="px-4 py-2 mr-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Non-Pivotal View
-        </button>
-        <button
-          onClick={() => setIsPivotalView(true)}
-          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-        >
-          Pivotal View
-        </button>
+ {/* View Toggle Menu */}
+ <div mb-4>
+        <Menubar>
+          <MenubarMenu>
+            <MenubarTrigger>Chart View</MenubarTrigger>
+            <MenubarContent>
+              <MenubarItem onSelect={() => setChartView('month')}>
+                Detailed View (Bar Chart)
+              </MenubarItem>
+              <MenubarItem onSelect={() => setChartView('category')}>
+                Category Summary (Bar Chart)
+              </MenubarItem>
+              <MenubarItem onSelect={() => setChartView('pie')}>
+                Category Distribution (Pie Chart)
+              </MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+        </Menubar>
       </div>
 
+
+
+ {/* View Toggle Menu */}
+ <div mb-4>
+        <Menubar>
+          <MenubarMenu>
+            <MenubarTrigger>Table View</MenubarTrigger>
+            <MenubarContent>
+              <MenubarItem onSelect={() => setIsPivotalView(true)}>
+                Pivotal View
+              </MenubarItem>
+              <MenubarItem onSelect={() => setIsPivotalView(false)}>
+                Detail View
+              </MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+        </Menubar>
+      </div>
+</div>
+      
       {/* Render Table */}
       {isPivotalView ? (
         <PivotalTable
@@ -215,38 +236,31 @@ const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
           formatNumber={(num) => num.toLocaleString()}
         />
       )}
- {/* View Toggle Buttons */}
- <div className="mb-4">
-        <button
-          onClick={() => setChartView('month')}
-          className="px-4 py-2 mr-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Chart By Month BB
-        </button>
-        <button
-          onClick={() => setChartView('category')}
-          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-        >
-          Chart By Category AA
-        </button>
-      </div>
+
       {/* Render the selected chart */}
       {chartView === 'month' ? (
-        <ChartWithManyCategories
-          chartData={chartData}
-          chartConfig={monthChartConfig}
-          dataKey="month"
-          barKey="total_sales"
-          uniqueCategories={uniqueCategories}
-        />
-      ) : (
-        <ChartWithSingleCategory
-          chartData={chartDataWithColors}
-          chartConfig={categoryChartConfig}
-          dataKey="category"
-          barKey="total_sales"
-        />
-      )}
+  <ChartWithManyCategories
+    chartData={chartData}
+    chartConfig={monthChartConfig}
+    dataKey="month"
+    barKey="total_sales"
+    uniqueCategories={uniqueCategories}
+  />
+) : chartView === 'category' ? (
+  <ChartWithSingleCategory
+    chartData={chartDataWithColors}
+    chartConfig={categoryChartConfig}
+    dataKey="category"
+    barKey="total_sales"
+  />
+) : chartView === 'pie' ? (
+  <PieChartWithProps
+    chartData={chartDataWithColors}
+    chartConfig={categoryChartConfig}
+    dataKey="category"
+    pieKey="total_sales"
+  />
+) : null}
     </div>
   );
 };
