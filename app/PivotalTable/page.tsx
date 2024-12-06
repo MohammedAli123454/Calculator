@@ -243,7 +243,7 @@ const handleMenuSelect = (viewType: string) => {
 
 
 <Dialog open={isDialogOpen} onOpenChange={(open) => setIsDialogOpen(open)}>
-  <DialogTrigger className="ml-2 bg-blue-500 text-white px-4 py-2 rounded">View Chart</DialogTrigger>
+  {/* <DialogTrigger className="ml-2 bg-blue-500 text-white px-4 py-2 rounded">View Chart</DialogTrigger> */}
   <DialogContent
     aria-describedby="chart-description" // Add this line to reference the description
     style={{ minWidth: '1000px', minHeight: '700px' }}

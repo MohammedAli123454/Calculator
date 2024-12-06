@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/chart";
 import { ChartConfig } from "@/components/ui/chart";
 
+const COLORS = ["#2563eb", "#60a5fa", "#34d399", "#f87171", "#facc15", "#ef4444", "#9333ea", "#f59e0b", "#6d28d9", "#10b981"];
+
 type PieChartProps = {
   chartData: { [key: string]: any }[];
   chartConfig: ChartConfig;
@@ -26,6 +28,7 @@ const PieChartWithProps: React.FC<PieChartProps> = ({
   chartConfig,
   dataKey,
   pieKey,
+
 }) => {
   return (
     <div className="mt-4">
@@ -52,6 +55,18 @@ const PieChartWithProps: React.FC<PieChartProps> = ({
           </Pie>
         </PieChart>
       </ChartContainer>
+      {/* Right side: Legends */}
+      <div className="flex flex-col items-start pl-8">
+  {chartData.map((entry, index) => (
+    <div key={`legend-${index}`} className="flex items-center gap-2 leading-none py-2">
+      <span className="w-4 h-4 block" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
+      <span className="text-sm">
+        {entry[dataKey]}: {entry[pieKey].toLocaleString()}
+      </span>
+    </div>
+  ))}
+</div>
+
     </div>
   );
 };
