@@ -1,12 +1,14 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import { AiOutlineCheck } from 'react-icons/ai';
+import { TbGridDots } from "react-icons/tb";
+import { FaArrowUpRightDots } from "react-icons/fa6";
+import { HiDotsHorizontal } from "react-icons/hi";
+import { FaLocationArrow } from "react-icons/fa";
+import { FaArrowAltCircleRight } from "react-icons/fa";
+import React, { useState } from "react";
 import { MultiSelect } from "react-multi-select-component";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from "recharts";
 import {
   ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -15,7 +17,6 @@ import {
   fetchUniqueMonths,
   fetchUniqueCategories,
 } from "@/app/actions/queries";
-import  ChartComponent  from "@/components/ChartComponent"
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ChartWithManyCategories from "@/components/ChartWithManyCategories";
 import ChartWithSingleCategory from "@/components/ChartWithSingleCategory";
@@ -32,7 +33,6 @@ import {
   MenubarTrigger,
 } from "@/components/ui/menubar"
 import { Dialog, DialogContent, DialogTrigger,DialogTitle } from "@/components/ui/dialog";
-
 
 const SalesTable = () => {
   const [selectedCategories, setSelectedCategories] = useState<{ label: string; value: string }[]>([{ label: "All", value: "All" }]);
@@ -123,25 +123,11 @@ const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
     fill: categoryChartConfig[dataItem.category]?.color || "#8884d8", // Fallback color
   }));
   
-
-
   // Filtered categories to display in the table
   const categoriesToDisplay =
     selectedCategories.some((item) => item.value === "All")
       ? uniqueCategories
       : selectedCategories.map((item) => item.value);
-
-  // Format numbers with commas
-  const formatNumber = (num: number) => num.toLocaleString();
-
-  // Calculate total sales for a specific category
-  const calculateCategoryTotal = (category: string) =>
-    uniqueMonths.reduce((total, month) => {
-      const sales = filteredData.find(
-        (item) => item.category === category && item.month.trim() === month
-      );
-      return total + (sales ? sales.total_sales : 0);
-    }, 0);
 
   // Multi-select options for categories
   const categoryOptions = [
@@ -160,28 +146,6 @@ const categoryChartConfig = uniqueCategories.reduce((acc, category, index) => {
       setSelectedCategories(selectedOptions);
     }
   };
-// Update dialog title based on selected menu item
-const handleMenuSelect = (viewType: string) => {
-  setChartView(viewType as 'month' | 'category' | 'pie');
-  setIsDialogOpen(true);
-  let title = "";
-  switch (viewType) {
-    case 'month':
-      title = "Detailed View (Bar Chart)";
-      break;
-    case 'category':
-      title = "Category Summary (Bar Chart)";
-      break;
-    case 'pie':
-      title = "Category Distribution (Pie Chart)";
-      break;
-    default:
-      title = "Chart View";
-  }
-  setDialogTitle(title);
-};
-
-
 
   return (
     <div className="p-4">
@@ -201,31 +165,49 @@ const handleMenuSelect = (viewType: string) => {
         />
       </div>
  {/* View Toggle Menu */}
- <div className="mb-4">
-          <Menubar>
-            <MenubarMenu>
-              <MenubarTrigger>Chart View</MenubarTrigger>
-              <MenubarContent>
-                <MenubarItem onSelect={() => handleMenuSelect('month')}>
-                  Detailed View (Bar Chart)
-                </MenubarItem>
-                <MenubarItem onSelect={() => handleMenuSelect('category')}>
-                  Category Summary (Bar Chart)
-                </MenubarItem>
-                <MenubarItem onSelect={() => handleMenuSelect('pie')}>
-                  Category Distribution (Pie Chart)
-                </MenubarItem>
-              </MenubarContent>
-            </MenubarMenu>
-          </Menubar>
-        </div>
+ <Menubar>
+  <MenubarMenu>
+    <MenubarTrigger>Show Chart
+    <span className="ml-2 text-green-500 text-2xl">
+        <FaArrowAltCircleRight />
+        </span>
+    </MenubarTrigger>
+    <MenubarContent>
+      <MenubarItem onSelect={() => {
+        setDialogTitle("Detailed View (Bar Chart)");
+        setChartView('month');
+        setIsDialogOpen(true);
+      }}>
+        Detailed View (Bar Chart)
+      </MenubarItem>
+      <MenubarItem onSelect={() => {
+        setDialogTitle("Category Summary (Bar Chart)");
+        setChartView('category');
+        setIsDialogOpen(true);
+      }}>
+        Category Summary (Bar Chart)
+      </MenubarItem>
+      <MenubarItem onSelect={() => {
+        setDialogTitle("Category Distribution (Pie Chart)");
+        setChartView('pie');
+        setIsDialogOpen(true);
+      }}>
+        Category Distribution (Pie Chart)
+      </MenubarItem>
+    </MenubarContent>
+  </MenubarMenu>
+</Menubar>
 
 
  {/* View Toggle Menu */}
  <div className="mb-4">
   <Menubar>
     <MenubarMenu>
-      <MenubarTrigger>Table View</MenubarTrigger>
+      <MenubarTrigger>Select Table Type
+        <span className="ml-2 text-green-500 text-2xl">
+        <FaArrowAltCircleRight />
+        </span>
+      </MenubarTrigger>
       <MenubarContent>
         <MenubarItem onSelect={() => setIsPivotalView(true)}>
           Pivotal View
@@ -237,13 +219,9 @@ const handleMenuSelect = (viewType: string) => {
     </MenubarMenu>
   </Menubar>
 </div>
-
 </div>
 
-
-
 <Dialog open={isDialogOpen} onOpenChange={(open) => setIsDialogOpen(open)}>
-  {/* <DialogTrigger className="ml-2 bg-blue-500 text-white px-4 py-2 rounded">View Chart</DialogTrigger> */}
   <DialogContent
     aria-describedby="chart-description" // Add this line to reference the description
     style={{ minWidth: '1000px', minHeight: '700px' }}
@@ -287,7 +265,6 @@ const handleMenuSelect = (viewType: string) => {
   </DialogContent>
 </Dialog>
 
-        
       {/* Render Table */}
       {isPivotalView ? (
         <PivotalTable
